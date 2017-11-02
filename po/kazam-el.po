@@ -1,0 +1,253 @@
+# English (United Kingdom) translation for kazam
+# Copyright (c) 2010 Rosetta Contributors and Canonical Ltd 2010
+# This file is distributed under the same license as the kazam package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: kazam\n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2010-10-08 14:12+0100\n"
+"PO-Revision-Date: 2010-10-15 21:31+0000\n"
+"Last-Translator: Salih EMIN <Unknown>\n"
+"Language-Team: Greek <el@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Launchpad-Export-Date: 2010-10-24 16:04+0000\n"
+"X-Generator: Launchpad (build Unknown)\n"
+
+#: ../data/ui/authenticate.ui.h:1
+msgid " "
+msgstr " "
+
+#: ../data/ui/authenticate.ui.h:2 ../data/ui/done-recording.ui.h:2
+msgid "Cancel"
+msgstr "Άκυρο"
+
+#: ../data/ui/authenticate.ui.h:3 ../data/ui/done-recording.ui.h:3
+msgid "Continue"
+msgstr "Συνέχεια"
+
+#: ../data/ui/authenticate.ui.h:4
+msgid "Email address:"
+msgstr "Email"
+
+#: ../data/ui/authenticate.ui.h:5
+msgid "I want to register an account now"
+msgstr "Θέλω να δημιουργήσω έναν λογαριασμό τώρα"
+
+#: ../data/ui/authenticate.ui.h:6
+msgid "Password:"
+msgstr "Κωδικός πρόσβασης:"
+
+#: ../data/ui/done-recording.ui.h:1 ../data/ui/start.ui.h:1
+msgid "About"
+msgstr "Σχετικά"
+
+#: ../data/ui/done-recording.ui.h:4
+msgid "Edit with:"
+msgstr "Επεξεργασία με:"
+
+#: ../data/ui/done-recording.ui.h:5 ../data/ui/export.ui.h:7
+#: ../data/ui/start.ui.h:3 ../data/kazam.desktop.in.h:1
+#: ../kazam/frontend/widgets/comboboxes.py:106
+#: ../kazam/frontend/widgets/dialogs.py:46
+msgid "Kazam Screencaster"
+msgstr "Kazam Screencaster"
+
+#: ../data/ui/done-recording.ui.h:6 ../data/ui/start.ui.h:4
+#: ../kazam/frontend/indicator.py:65
+msgid "Quit"
+msgstr "Έξοδος"
+
+#: ../data/ui/done-recording.ui.h:7
+msgid "Save for later use..."
+msgstr "Αποθήκευση για μετέπειτα χρήση"
+
+#: ../data/ui/done-recording.ui.h:8
+msgid ""
+"Your screencast has finished recording.\n"
+"What do you want to do now?"
+msgstr ""
+"Η καταγραφή οθόνης τελείωσε την εγγραφή.\n"
+"Τι θέλετε να κάνετε τώρα;"
+
+#: ../data/ui/done-recording.ui.h:10 ../data/ui/export.ui.h:10
+#: ../data/ui/start.ui.h:8
+msgid "_File"
+msgstr "Αρχείο"
+
+#: ../data/ui/done-recording.ui.h:11 ../data/ui/export.ui.h:11
+#: ../data/ui/start.ui.h:9
+msgid "_Help"
+msgstr "_Βοήθεια"
+
+#: ../data/ui/export.ui.h:1
+msgid "<b>Export to:</b>"
+msgstr "<b>Εξαγωγή σε:</b>"
+
+#: ../data/ui/export.ui.h:2
+msgid "Audio"
+msgstr "Ήχος"
+
+#: ../data/ui/export.ui.h:3
+msgid "Back"
+msgstr "Πίσω"
+
+#: ../data/ui/export.ui.h:4 ../data/ui/start.ui.h:2
+msgid "Close"
+msgstr "Κλείσιμο"
+
+#: ../data/ui/export.ui.h:5
+msgid "Crop"
+msgstr "Περικοπή"
+
+#: ../data/ui/export.ui.h:6
+msgid "Export"
+msgstr "Εξαγωγή"
+
+#: ../data/ui/export.ui.h:8
+msgid "Quality:"
+msgstr "Ποιότητα:"
+
+#: ../data/ui/export.ui.h:9
+msgid "Video"
+msgstr "Βίντεο"
+
+#: ../data/ui/start.ui.h:5
+msgid "Record"
+msgstr "Εγγραφή"
+
+#: ../data/ui/start.ui.h:6
+msgid "Record Audio from:"
+msgstr "Εγγραφή Ήχου από:"
+
+#: ../data/ui/start.ui.h:7
+msgid "Record Video from:"
+msgstr "Εγγραφή Βίντεο από:"
+
+#: ../data/ui/export_sources/youtube.ui.h:1
+msgid "Category"
+msgstr "Κατηγορία"
+
+#: ../data/ui/export_sources/youtube.ui.h:2
+msgid "Description"
+msgstr "Περιγραφή"
+
+#: ../data/ui/export_sources/youtube.ui.h:3
+msgid "Keywords"
+msgstr "Λέξεις-Κλειδιά"
+
+#: ../data/ui/export_sources/youtube.ui.h:4
+msgid "Private"
+msgstr "Ιδιωτικό"
+
+#: ../data/ui/export_sources/youtube.ui.h:5
+msgid "Title"
+msgstr "Τίτλος"
+
+#: ../data/kazam.desktop.in.h:2
+msgid "Record a video of activity on your screen"
+msgstr "Εγγραφή ενός βίντεο με τη δραστηριότητα στην οθόνη σας"
+
+#: ../data/kazam.desktop.in.h:3
+msgid "Screencaster"
+msgstr "Εγγραφή βίντεο οθόνης"
+
+#. Open the save dialog
+#: ../kazam/app.py:149
+msgid "Save screencast"
+msgstr "Αποθήκευση βίντεο οθόνης"
+
+#: ../kazam/frontend/export.py:201
+msgid "Logging in..."
+msgstr "Γίνεται είσοδος..."
+
+#: ../kazam/frontend/export.py:207
+msgid "Log-in completed."
+msgstr "Η είσοδος ολοκληρώθηκε."
+
+#: ../kazam/frontend/export.py:209
+msgid "There was an error logging in."
+msgstr "Υπήρξε ένα σφάλμα κατά την είσοδο."
+
+#: ../kazam/frontend/export.py:214
+msgid "Converting screencast..."
+msgstr "To βίντεο μετατρέπεται..."
+
+#: ../kazam/frontend/export.py:218
+msgid "Screencast converted."
+msgstr "To βίντεο μετατράπηκε."
+
+#: ../kazam/frontend/export.py:220
+msgid "There was an error converting."
+msgstr "Υπήρξε ένα σφάλμα κατά τη μετατροπή."
+
+#: ../kazam/frontend/export.py:225
+msgid "Uploading screencast..."
+msgstr "Αποστολή καταγραφής..."
+
+#: ../kazam/frontend/export.py:229
+msgid "Screencast uploaded."
+msgstr "Το βίντεο αποστάλθηκε."
+
+#. Show a dialog with the url of the uploaded file
+#: ../kazam/frontend/export.py:233
+msgid "Your screencast has uploaded successfully."
+msgstr "Το βίντεο σας μεταφορτώθηκε επιτυχώς."
+
+#: ../kazam/frontend/export.py:234
+msgid "It is available at the location below:"
+msgstr "Είναι διαθέσιμο στη τοποθεσία παρακάτω"
+
+#: ../kazam/frontend/export.py:236
+msgid "There was an error uploading."
+msgstr "Υπήρξε ένα σφάλμα κατά την αποστολή."
+
+#: ../kazam/frontend/indicator.py:58
+msgid "Pause recording"
+msgstr "Παύση εγγραφής"
+
+#: ../kazam/frontend/indicator.py:61
+msgid "Finish recording..."
+msgstr "Ολοκλήρωση εγγραφής..."
+
+#: ../kazam/frontend/window_countdown.py:98
+msgid "Recording will start in..."
+msgstr "Η εγγραφή θα ξεκινήσει σε..."
+
+#: ../kazam/frontend/widgets/comboboxes.py:199
+msgid "Screen"
+msgstr "Οθόνη"
+
+#: ../kazam/frontend/widgets/comboboxes.py:205
+msgid "All Screens"
+msgstr "Όλες οι Οθόνες"
+
+#: ../kazam/frontend/widgets/comboboxes.py:207
+#, python-format
+msgid "Screen %s"
+msgstr "Οθόνη %s"
+
+#: ../kazam/frontend/widgets/comboboxes.py:218
+msgid "Computer"
+msgstr "Υπολογιστής"
+
+#: ../kazam/frontend/widgets/dialogs.py:47
+msgid "Record a video of activity on your screen."
+msgstr "Εγγραφή βίντεο από μία δραστηριότητα στην οθόνη σας"
+
+#: ../kazam/frontend/widgets/dialogs.py:65
+msgid "Untitled Screencast"
+msgstr "Ανώνυμο βίντεο"
+
+#: ../kazam/frontend/widgets/dialogs.py:150
+#, python-format
+msgid "To upload a screencast to %s, you need a %s account."
+msgstr "Για να αποστείλετε το βίντεο στο %s, χρειάζεστε έναν λογαριασμό %s."
+
+#: ../kazam/frontend/widgets/dialogs.py:154
+#, python-format
+msgid "I have a %s account:"
+msgstr "Έχω λογαριασμό %s:"
