@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-06-15 22:18+0200\n"
+"POT-Creation-Date: 2014-06-16 20:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../data/ui/kazam.ui.h:1 ../data/kazam.desktop.in.h:1
-#: ../kazam/frontend/about_dialog.py:58
+#: ../kazam/frontend/about_dialog.py:59
 msgid "Kazam"
 msgstr ""
 
@@ -42,7 +42,7 @@ msgstr ""
 msgid "Mouse cursor"
 msgstr ""
 
-#: ../data/ui/kazam.ui.h:7 ../data/ui/preferences.ui.h:15 ../kazam/app.py:168
+#: ../data/ui/kazam.ui.h:7 ../data/ui/preferences.ui.h:15 ../kazam/app.py:171
 #: ../kazam/frontend/save_dialog.py:42
 msgid "Screencast"
 msgstr ""
@@ -51,7 +51,7 @@ msgstr ""
 msgid "Window borders"
 msgstr ""
 
-#: ../data/ui/kazam.ui.h:9 ../data/ui/preferences.ui.h:18 ../kazam/app.py:180
+#: ../data/ui/kazam.ui.h:9 ../data/ui/preferences.ui.h:18 ../kazam/app.py:185
 #: ../kazam/frontend/save_dialog.py:44
 msgid "Screenshot"
 msgstr ""
@@ -148,7 +148,7 @@ msgstr ""
 msgid "Select a window to screenshot"
 msgstr ""
 
-#: ../data/kazam.desktop.in.h:8 ../kazam/frontend/main_menu.py:64
+#: ../data/kazam.desktop.in.h:8 ../kazam/frontend/main_menu.py:65
 msgid "Preferences"
 msgstr ""
 
@@ -156,59 +156,79 @@ msgstr ""
 msgid "Gstreamer 1.0 or higher required, bailing out."
 msgstr ""
 
-#: ../kazam/app.py:169
+#: ../kazam/app.py:172
 msgid "Record a video of your desktop."
 msgstr ""
 
-#: ../kazam/app.py:181
+#: ../kazam/app.py:186
 msgid "Record a picture of your desktop."
 msgstr ""
 
-#: ../kazam/app.py:204
+#: ../kazam/app.py:198
+msgid "Webcam"
+msgstr ""
+
+#: ../kazam/app.py:199
+msgid "Capture form your webcam."
+msgstr ""
+
+#: ../kazam/app.py:212
+msgid "Broadcast"
+msgstr ""
+
+#: ../kazam/app.py:213
+msgid "Broadcast your desktop."
+msgstr ""
+
+#: ../kazam/app.py:239
 msgid "Fullscreen"
 msgstr ""
 
-#: ../kazam/app.py:205
+#: ../kazam/app.py:240
 msgid "Capture contents of the current screen."
 msgstr ""
 
-#: ../kazam/app.py:216
+#: ../kazam/app.py:251
 msgid "All Screens"
 msgstr ""
 
-#: ../kazam/app.py:217
+#: ../kazam/app.py:252
 msgid "Capture contents of all of your screens."
 msgstr ""
 
-#: ../kazam/app.py:229
+#: ../kazam/app.py:264
 msgid "Window"
 msgstr ""
 
-#: ../kazam/app.py:230
+#: ../kazam/app.py:265
 msgid "Capture contents of a single window."
 msgstr ""
 
-#: ../kazam/app.py:241
+#: ../kazam/app.py:276
 msgid "Area"
 msgstr ""
 
-#: ../kazam/app.py:242
+#: ../kazam/app.py:277
 msgid "Capture a pre-selected area of your screen."
 msgstr ""
 
-#: ../kazam/app.py:306 ../kazam/frontend/indicator.py:68
+#: ../kazam/app.py:341 ../kazam/app.py:358 ../kazam/frontend/indicator.py:68
 msgid "Start recording"
 msgstr ""
 
-#: ../kazam/app.py:314
+#: ../kazam/app.py:349
 msgid "Take screenshot"
 msgstr ""
 
-#: ../kazam/app.py:561 ../kazam/app.py:582 ../kazam/frontend/indicator.py:76
+#: ../kazam/app.py:363
+msgid "Start broadcasting"
+msgstr ""
+
+#: ../kazam/app.py:606 ../kazam/app.py:627 ../kazam/frontend/indicator.py:76
 msgid "Finish recording"
 msgstr ""
 
-#: ../kazam/app.py:744
+#: ../kazam/app.py:790
 msgid "Cancel countdown"
 msgstr ""
 
@@ -250,7 +270,7 @@ msgstr ""
 msgid "Save screencast"
 msgstr ""
 
-#: ../kazam/frontend/about_dialog.py:59
+#: ../kazam/frontend/about_dialog.py:60
 msgid "Record a video of activity on your screen or capture a screenshot."
 msgstr ""
 
@@ -258,39 +278,39 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: ../kazam/frontend/main_menu.py:61
+#: ../kazam/frontend/main_menu.py:62
 msgid "File"
 msgstr ""
 
-#: ../kazam/frontend/main_menu.py:62 ../kazam/frontend/indicator.py:82
+#: ../kazam/frontend/main_menu.py:63 ../kazam/frontend/indicator.py:82
 msgid "Quit"
 msgstr ""
 
-#: ../kazam/frontend/main_menu.py:62
+#: ../kazam/frontend/main_menu.py:63
 msgid "Quit Kazam"
 msgstr ""
 
-#: ../kazam/frontend/main_menu.py:64
+#: ../kazam/frontend/main_menu.py:65
 msgid "Open preferences"
 msgstr ""
 
-#: ../kazam/frontend/main_menu.py:66
+#: ../kazam/frontend/main_menu.py:67
 msgid "Help"
 msgstr ""
 
-#: ../kazam/frontend/main_menu.py:67
+#: ../kazam/frontend/main_menu.py:68
 msgid "About"
 msgstr ""
 
-#: ../kazam/frontend/main_menu.py:67
+#: ../kazam/frontend/main_menu.py:68
 msgid "About Kazam"
 msgstr ""
 
-#: ../kazam/frontend/window_area.py:382
+#: ../kazam/frontend/window_area.py:384
 msgid "Select an area by clicking and dragging."
 msgstr ""
 
-#: ../kazam/frontend/window_area.py:383
+#: ../kazam/frontend/window_area.py:385
 msgid "Press ENTER to confirm or ESC to cancel"
 msgstr ""
 
