@@ -137,12 +137,13 @@ class AreaWindow(GObject.GObject):
 
     def cb_leave_notify_event(self, widget, event):
         (scr, x, y) = self.pntr_device.get_position()
-        cur = scr.get_monitor_at_point(x, y)
-        self.window.unfullscreen()
-        self.window.move(HW.screens[cur]['x'],
-                         HW.screens[cur]['y'])
-        self.window.fullscreen()
-        logger.debug("Move to X: {0} Y: {1}".format(HW.screens[cur]['x'], HW.screens[cur]['y']))
+        if x > 0 or y > 0:
+            cur = scr.get_monitor_at_point(x, y)
+            self.window.unfullscreen()
+            self.window.move(HW.screens[cur]['x'],
+                             HW.screens[cur]['y'])
+            self.window.fullscreen()
+            logger.debug("Move to X: {0} Y: {1}".format(HW.screens[cur]['x'], HW.screens[cur]['y']))
         return True
 
     def cb_keypress_event(self, widget, event):
@@ -150,8 +151,27 @@ class AreaWindow(GObject.GObject):
         self.gdk_win.set_cursor(self.last_cursor)
         if keycode == 36 or keycode == 104: # Enter
             self.window.hide()
-            self.width = abs(self.width)
-            self.height = abs(self.height)
+            if self.startx > self.endx:
+                self.startx, self.endx = self.endx, self.startx
+
+            if self.g_startx > self.g_endx:
+                self.g_startx, self.g_endx = self.g_endx, self.g_startx
+
+            if self.starty > self.endy:
+                self.starty, self.endy = self.endy, self.starty
+
+            if self.g_starty > self.g_endy:
+                self.g_starty, self.g_endy = self.g_endy, self.g_starty
+
+            if self.startx < 0:
+                self.startx = 0
+
+            if self.starty < 0:
+                self.starty = 0
+
+            self.width  = abs(self.endx - self.startx)
+            self.height = abs(self.endy - self.starty)
+            logger.debug("Selected coords: {0} {1} {2} {3}".format(self.g_startx, self.g_starty, self.g_endx, self.g_endy))
             self.emit("area-selected")
         elif keycode == 9: # ESC
             self.window.hide()
