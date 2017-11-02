@@ -1,13 +1,13 @@
 Metadata-Version: 1.1
 Name: kazam
-Version: 1.3.5-0ubuntu1
+Version: 1.3.99-0ubuntu1
 Summary: A screencasting program created with design in mind.
 Home-page: https://launchpad.net/kazam
 Author: David Klasinc
 Author-email: bigwhale@lubica.net
 License: GPLv3
 Description: 
-                   Kazam v1.3.4 "NCC-2893"
+                   Kazam v1.3.99 "NX-01"
         
         
         Introduction
@@ -27,7 +27,7 @@ Description:
         Kazam is always available from Launchpad under https://launchpad.net/kazam
         
         Latest stable release is 1.0.6.
-        Latest unstable release is 1.3.1 - Stargazer edition
+        Latest unstable release is 1.3.99
         
         
         Installation - stable release
@@ -39,8 +39,8 @@ Description:
         
         $ sudo apt-get install kazam
         
-        For Ubuntu 11.10 - Oneiric Ocelot, the best way to install Kazam is to add
-        a PPA repository and then use apt-get command or Software Centre.
+        For other Ubuntu based distributions the best way to install Kazam is
+        to add a PPA repository and then use apt-get command or Software Center.
         
         $ sudo add-apt-repository ppa:kazam-team/stable-series
         $ sudo apt-get update
@@ -59,6 +59,16 @@ Description:
         Run installation as root user, or use sudo:
         
            # python setup.py install
+        
+        Installation - unstable version
+        -------------------------------
+        
+        Installing current unstable build from a PPA can be done by adding
+        unstable series PPA.
+        
+        $ sudo add-apt-repository ppa:kazam-team/unstable-series
+        $ sudo apt-get update
+        $ sudo apt-get install kazam
         
         
         Installation - development version
@@ -82,19 +92,17 @@ Description:
         -------------
         
         If you want to run Kazam from the source tree, there are a few limitations
-        that you have to take into account. Right now Ubuntu App indicator will not
-        allow setting custom icons. Every icon has to be taken from currently
-        installed icon theme. See https://bugs.launchpad.net/kazam/+bug/657857 for
-        more information.
+        that you have to take into account. Every icon has to be taken from
+        currently installed icon theme. Toolbars will not show any icons and you
+        will not see Unity AppIndicator.
         
         To run Kazam simply execute te following commands in the source tree:
         
         $ cd bin
         $ ./kazam
         
-        If you already have Kazam installed then Kazam icon will show in the
-        indicator, if not, the only way to get to the menu is to click on one
-        of the icons in the indicator and then move around with the cursor keys.
+        If you already have Kazam installed then Kazam icons will be displayed
+        properly.
         
         Keyboard shortcuts
         ------------------
@@ -109,19 +117,17 @@ Description:
         
         From Ubuntu 12.10 keyboard binder is available in the universe repositories.
         
-        
         Known Issues
         ------------
         
         - Support for multiple monitors is there, but your mileage may vary. It
-        was tested only on two screen setup where both screens are side by side. With
-        Region recording the Video source is ignored.
+        was tested only on two screen setup where both screens are side by side.
         
-        - Trouble with recording from certain Monitor sources. I noticed this with
-        Logitech G110 USB Keyboard that can play audio. Pulse Audio will see two
-        devices: USP PnP Stereo Device and Monitor of USB PnP Stereo Device. When
-        recording from the monitor, volume controls for both devices will affect
-        the volume in the final recording.
+        - Trouble with recording audio from certain Monitor sources. I noticed
+        this with Logitech G110 USB Keyboard that can play audio. Pulse
+        Audio will see two devices: USP PnP Stereo Device and 'Monitor of USB PnP
+        Stereo Device'. When recording from the monitor, volume controls for
+        both devices will affect the volume in the final recording.
         
         - I have no idea where to put Mute/Unmute button, so right now every audio
         source you select is automatically unmuted.
@@ -130,6 +136,10 @@ Description:
         the recording. I wasn't able to reproduce this bug and any more info is
         appreciated. See https://bugs.launchpad.net/kazam/+bug/933835 for more
         details.
+        
+        - Two memory leaks were noticed, one with VP8 encoder and one with Intel
+        graphics cards. Still investigating if this is a driver, Xorg or
+        GStreamer problem.
         
         Recording Tips
         --------------
