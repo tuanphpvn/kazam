@@ -251,7 +251,13 @@ class KazamApp(GObject.GObject):
         if not prefs.silent:
             self.window.show_all()
         else:
-            logger.info("Starting in silent mode:\n  SUPER-CTRL-W to toggle main window.\n  SUPER-CTRL-Q to quit.")
+            logger.info("""Starting in silent mode:\n"""
+                        """  SUPER-CTRL-W to toggle main window.\n"""
+                        """  SUPER-CTRL-R to start recording.\n"""
+                        """  SUPER-CTRL-F to finish recording.\n"""
+                        """  SUPER-CTRL-P to pause/resume recording.\n"""
+                        """  SUPER-CTRL-Q to quit.\n"""
+                       )
 
         self.restore_UI()
 
@@ -278,7 +284,6 @@ class KazamApp(GObject.GObject):
             logger.debug("Main toggled: {0}".format(name))
             self.main_mode = MODE_SCREENCAST
             self.ntb_main.set_current_page(0)
-            self.btn_window.set_sensitive(True)
             self.indicator.menuitem_start.set_label(_("Start recording"))
 
         elif name == "MAIN_SCREENSHOT" and widget.get_active():
@@ -287,7 +292,6 @@ class KazamApp(GObject.GObject):
             self.ntb_main.set_current_page(1)
             if self.record_mode == MODE_WIN:
                 self.last_mode.set_active(True)
-            self.btn_window.set_sensitive(False)
             self.indicator.menuitem_start.set_label(_("Take screenshot"))
 
 
@@ -371,7 +375,8 @@ class KazamApp(GObject.GObject):
 
     def cb_window_selected(self, widget):
         prefs.xid = self.select_window.xid
-        logger.debug("Window selected: {0}".format(prefs.xid))
+        prefs.xid_geometry = self.select_window.geometry
+        logger.debug("Window selected: {0} - {1}".format(self.select_window.win_name, prefs.xid))
         self.window.set_sensitive(True)
 
     def cb_window_canceled(self, widget):
@@ -449,7 +454,9 @@ class KazamApp(GObject.GObject):
             self.indicator.start_recording()
             self.recorder.start_recording()
         elif self.main_mode == MODE_SCREENSHOT:
+            self.indicator.hide_it()
             self.grabber.grab()
+            self.indicator.show_it()
 
     def cb_stop_request(self, widget):
         self.recording = False
@@ -551,9 +558,21 @@ class KazamApp(GObject.GObject):
     def cb_edit_request(self, widget, data):
         (command, arg_list) = data
         arg_list.insert(0, command)
-        arg_list.append(self.tempfile)
+        #
+        # Even if we're not autosaving get the next autosave file and move currently recorded file there
+        # In case user might lost it.
+        #
+        fname = get_next_filename(prefs.video_dest,
+                                  prefs.autosave_video_file,
+                                  CODEC_LIST[prefs.codec][3])
+
+        shutil.move(self.tempfile, fname)
+        arg_list.append(fname)
         logger.debug("Edit request, cmd: {0}".format(arg_list))
-        Popen(arg_list)
+        try:
+            Popen(arg_list)
+        except:
+            logger.warning("Failed to open selected editor. Have no ")
         self.window.set_sensitive(True)
         self.window.show_all()
 
@@ -640,7 +659,8 @@ class KazamApp(GObject.GObject):
         elif self.main_mode == MODE_SCREENSHOT:
             self.grabber = Grabber()
             self.grabber.setup_sources(video_source,
-                                       prefs.area if self.record_mode == MODE_AREA else None)
+                                       prefs.area if self.record_mode == MODE_AREA else None,
+                                       prefs.xid if self.record_mode == MODE_WIN else None)
             self.grabber.connect("flush-done", self.cb_flush_done)
 
 

@@ -54,11 +54,13 @@ class Screencast(GObject.GObject):
     def __init__(self):
         GObject.GObject.__init__(self)
 
-        self.tempfile = tempfile.mktemp(prefix="kazam_", suffix=".movie")
+        self.temp_fh = tempfile.mkstemp(prefix="kazam_", dir=prefs.video_dest, suffix=".movie")
+        self.tempfile = self.temp_fh[1]
         self.muxer_tempfile = "{0}.mux".format(self.tempfile)
         self.pipeline = Gst.Pipeline()
         self.area = None
         self.xid = None
+        self.crop_vid = False
 
     def setup_sources(self,
                       video_source,
@@ -144,10 +146,18 @@ class Screencast(GObject.GObject):
             self.vid_caps_filter = Gst.ElementFactory.make("capsfilter", "vid_filter")
             self.vid_caps_filter.set_property("caps", self.vid_caps)
         else:
-
-            if self.xid:
-                logger.debug("Capturing Window: {0}".format(self.xid))
+            if self.xid:   # xid was passed, so we have to capture a single window.
+                logger.debug("Capturing Window: {0} {1}".format(self.xid, prefs.xid_geometry))
                 self.videosrc.set_property("xid", self.xid)
+
+                if prefs.codec == CODEC_H264:
+                    self.videocrop = Gst.ElementFactory.make("videocrop", "cropper")
+                    if prefs.xid_geometry[2] % 2:
+                        self.videocrop.set_property("left", 1)
+                        self.crop_vid = True
+                    if prefs.xid_geometry[3] % 2:
+                        self.videocrop.set_property("bottom", 1)
+                        self.crop_vid = True
             else:
                 self.videosrc.set_property("startx", startx)
                 self.videosrc.set_property("starty", starty)
@@ -157,9 +167,9 @@ class Screencast(GObject.GObject):
             self.videosrc.set_property("use-damage", False)
             self.videosrc.set_property("show-pointer", prefs.capture_cursor)
 
-            self.vid_caps = Gst.caps_from_string("video/x-raw,format=(x-raw-rgb),framerate={0}/1".format(prefs.framerate))
-            self.vid_caps_filter = Gst.ElementFactory.make("capsfilter", "vid_filter")
-            self.vid_caps_filter.set_property("caps", self.vid_caps)
+        self.vid_caps = Gst.caps_from_string("video/x-raw,format=(x-raw-rgb),framerate={0}/1".format(prefs.framerate))
+        self.vid_caps_filter = Gst.ElementFactory.make("capsfilter", "vid_filter")
+        self.vid_caps_filter.set_property("caps", self.vid_caps)
 
         self.videoconvert = Gst.ElementFactory.make("videoconvert", "videoconvert")
         self.videorate = Gst.ElementFactory.make("videorate", "video_rate")
@@ -242,6 +252,8 @@ class Screencast(GObject.GObject):
         #
         self.pipeline.add(self.videosrc)
         self.pipeline.add(self.vid_in_queue)
+        if self.crop_vid:
+            self.pipeline.add(self.videocrop)
         self.pipeline.add(self.videorate)
         self.pipeline.add(self.vid_caps_filter)
         self.pipeline.add(self.videoconvert)
@@ -271,7 +283,11 @@ class Screencast(GObject.GObject):
     def setup_links(self):
         # Connect everything together
         self.videosrc.link(self.vid_in_queue)
-        self.vid_in_queue.link(self.videorate)
+        if self.crop_vid:
+            self.vid_in_queue.link(self.videocrop)
+            self.videocrop.link(self.videorate)
+        else:
+            self.vid_in_queue.link(self.videorate)
         self.videorate.link(self.vid_caps_filter)
         self.vid_caps_filter.link(self.videoconvert)
         if prefs.codec is CODEC_RAW:
