@@ -11,7 +11,7 @@ player that supports VP8/WebM video format.
 Optionally you can record sound from any sound input device that is
 supported and visible by PulseAudio.
 
-Since Kazam has been stop development since 2014. Continue their work is welcome!
+Since Kazam has been stopped development since 2014. Continue their work are welcome!
 
 ### Installation - development version
 ======================================
