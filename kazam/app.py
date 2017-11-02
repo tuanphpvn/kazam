@@ -80,8 +80,7 @@ class KazamApp(GObject.GObject):
         prefs.test = test
         prefs.dist = dist
         prefs.silent = silent
-        prefs.sound = not sound     # Parameter is called nosound and if true, then we don't have sound.
-                                    # Tricky parameters are tricky!
+        prefs.sound = sound
 
         self.setup_translations()
 
@@ -96,29 +95,6 @@ class KazamApp(GObject.GObject):
         self.icons = Gtk.IconTheme.get_default()
         self.icons.append_search_path(os.path.join(prefs.datadir,"icons", "48x48", "apps"))
         self.icons.append_search_path(os.path.join(prefs.datadir,"icons", "16x16", "apps"))
-
-        try:
-            from gi.repository import Unity, Dbusmenu
-            launcher = Unity.LauncherEntry.get_for_desktop_id("kazam.desktop")
-            ql = Dbusmenu.Menuitem.new()
-            ql_item1 = Dbusmenu.Menuitem.new()
-            ql_item1.property_set(Dbusmenu.MENUITEM_PROP_LABEL, _("Record screencast"))
-            ql_item1.property_set_bool(Dbusmenu.MENUITEM_PROP_VISIBLE, True)
-            ql_item1.connect("item-activated", self.cb_ql_screencast)
-            ql.child_append(ql_item1)
-            ql_item2 = Dbusmenu.Menuitem.new()
-            ql_item2.property_set(Dbusmenu.MENUITEM_PROP_LABEL, _("Take screenshot"))
-            ql_item2.property_set_bool(Dbusmenu.MENUITEM_PROP_VISIBLE, True)
-            ql_item2.connect("item-activated", self.cb_ql_screenshot)
-            ql.child_append(ql_item2)
-            ql_item3 = Dbusmenu.Menuitem.new()
-            ql_item3.property_set(Dbusmenu.MENUITEM_PROP_LABEL, _("Preferences"))
-            ql_item3.property_set_bool(Dbusmenu.MENUITEM_PROP_VISIBLE, True)
-            ql_item3.connect("item-activated", self.cb_ql_preferences)
-            ql.child_append(ql_item3)
-            launcher.set_property("quicklist", ql)
-        except ImportError:
-            logger.warning("Unity and Dbusmenu not found. Skipping launcher integration.")
 
         # Initialize all the variables
 
@@ -243,12 +219,12 @@ class KazamApp(GObject.GObject):
         self.sep_2 = Gtk.SeparatorToolItem()
         self.sep_2.set_draw(False)
         self.sep_2.set_expand(True)
-        #self.toolbar_aux.insert(self.sep_2, -1)
+        self.toolbar_aux.insert(self.sep_2, -1)
         self.toolbar_aux.insert(self.btn_full, -1)
         self.toolbar_aux.insert(self.btn_allscreens, -1)
         self.toolbar_aux.insert(self.btn_window, -1)
         self.toolbar_aux.insert(self.btn_area, -1)
-        #self.toolbar_aux.insert(self.sep_2, -1)
+        self.toolbar_aux.insert(self.sep_2, -1)
 
         self.ntb_main.set_current_page(0)
 
@@ -275,12 +251,6 @@ class KazamApp(GObject.GObject):
                        )
 
         self.restore_UI()
-
-        if not prefs.sound:
-            self.combobox_audio.set_sensitive(False)
-            self.combobox_audio2.set_sensitive(False)
-            self.volumebutton_audio.set_sensitive(False)
-            self.volumebutton_audio2.set_sensitive(False)
 
         HW.get_current_screen(self.window)
         self.startup = False
