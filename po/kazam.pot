@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-11-02 01:49+0100\n"
+"POT-Creation-Date: 2012-12-23 10:14+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,40 +18,46 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../data/ui/kazam.ui.h:1 ../data/kazam.desktop.in.h:1
-#: ../kazam/frontend/about_dialog.py:53
-msgid "Kazam Screencaster"
+#: ../kazam/frontend/about_dialog.py:57
+msgid "Kazam"
 msgstr ""
 
 #: ../data/ui/kazam.ui.h:2
-msgid "Seconds to wait before recording:"
-msgstr ""
-
-#: ../data/ui/kazam.ui.h:3
 msgid "Capture"
 msgstr ""
 
-#: ../data/ui/kazam.ui.h:4
-msgid "Include when recording:"
+#: ../data/ui/kazam.ui.h:3
+msgid "Seconds to wait before capturing:"
 msgstr ""
 
-#: ../data/ui/kazam.ui.h:5
+#: ../data/ui/kazam.ui.h:4
 msgid "Sound from microphone"
 msgstr ""
 
-#: ../data/ui/kazam.ui.h:6
+#: ../data/ui/kazam.ui.h:5
 msgid "Sound from speakers"
 msgstr ""
 
-#: ../data/ui/kazam.ui.h:7
+#: ../data/ui/kazam.ui.h:6
 msgid "Mouse cursor"
 msgstr ""
 
-#: ../data/ui/kazam.ui.h:8 ../data/ui/preferences.ui.h:16 ../kazam/app.py:168
+#: ../data/ui/kazam.ui.h:7 ../data/ui/preferences.ui.h:16 ../kazam/app.py:159
+#: ../kazam/frontend/save_dialog.py:43
 msgid "Screencast"
 msgstr ""
 
-#: ../data/ui/kazam.ui.h:9 ../data/ui/preferences.ui.h:19 ../kazam/app.py:177
+#: ../data/ui/kazam.ui.h:8
+msgid "Window borders"
+msgstr ""
+
+#: ../data/ui/kazam.ui.h:9 ../data/ui/preferences.ui.h:19 ../kazam/app.py:167
+#: ../kazam/frontend/save_dialog.py:45
 msgid "Screenshot"
+msgstr ""
+
+#: ../data/ui/kazam.ui.h:10
+msgid "When capturing include:"
 msgstr ""
 
 #: ../data/ui/preferences.ui.h:1
@@ -123,79 +129,103 @@ msgid "Shutter type:"
 msgstr ""
 
 #: ../data/kazam.desktop.in.h:2
-msgid "Screencaster"
+msgid "Screencast and Screenshot tool"
 msgstr ""
 
 #: ../data/kazam.desktop.in.h:3
-msgid "Record a video of activity on your screen"
+msgid "Record a video or take a screenshot of your screen"
 msgstr ""
 
-#: ../kazam/app.py:169
+#: ../data/kazam.desktop.in.h:4
+msgid "screenshot;screencast;videorecord;desktop recording;"
+msgstr ""
+
+#: ../data/kazam.desktop.in.h:5
+msgid "Take a screenshot of entire workspace"
+msgstr ""
+
+#: ../data/kazam.desktop.in.h:6
+msgid "Select an area to screenshot"
+msgstr ""
+
+#: ../data/kazam.desktop.in.h:7
+msgid "Select a window to screenshot"
+msgstr ""
+
+#: ../data/kazam.desktop.in.h:8 ../kazam/frontend/main_menu.py:65
+msgid "Preferences"
+msgstr ""
+
+#: ../kazam/app.py:57 ../kazam/app.py:66
+msgid "Gstreamer 1.0 or higher required, bailing out."
+msgstr ""
+
+#: ../kazam/app.py:160
 msgid "Record a video of your desktop."
 msgstr ""
 
-#: ../kazam/app.py:178
+#: ../kazam/app.py:168
 msgid "Record a picture of your desktop."
 msgstr ""
 
-#: ../kazam/app.py:194
+#: ../kazam/app.py:183
 msgid "Fullscreen"
 msgstr ""
 
-#: ../kazam/app.py:195
+#: ../kazam/app.py:184
 msgid "Capture contents of the current screen."
 msgstr ""
 
-#: ../kazam/app.py:203
+#: ../kazam/app.py:191
 msgid "All Screens"
 msgstr ""
 
-#: ../kazam/app.py:204
+#: ../kazam/app.py:192
 msgid "Capture contents of all of your screens."
 msgstr ""
 
-#: ../kazam/app.py:211
+#: ../kazam/app.py:200
 msgid "Window"
 msgstr ""
 
-#: ../kazam/app.py:212
+#: ../kazam/app.py:201
 msgid "Capture contents of a single window."
 msgstr ""
 
-#: ../kazam/app.py:220
+#: ../kazam/app.py:208
 msgid "Area"
 msgstr ""
 
-#: ../kazam/app.py:221
+#: ../kazam/app.py:209
 msgid "Capture a pre-selected area of your screen."
 msgstr ""
 
-#: ../kazam/app.py:287 ../kazam/frontend/indicator.py:68
+#: ../kazam/app.py:268 ../kazam/frontend/indicator.py:68
 msgid "Start recording"
 msgstr ""
 
-#: ../kazam/app.py:295
+#: ../kazam/app.py:276
 msgid "Take screenshot"
 msgstr ""
 
-#: ../kazam/app.py:452 ../kazam/app.py:467 ../kazam/frontend/indicator.py:76
+#: ../kazam/app.py:472 ../kazam/app.py:487 ../kazam/frontend/indicator.py:76
 msgid "Finish recording"
 msgstr ""
 
-#: ../kazam/app.py:618
+#: ../kazam/app.py:646
 msgid "Cancel countdown"
 msgstr ""
 
-#: ../kazam/frontend/window_select.py:142
+#: ../kazam/frontend/window_select.py:155
 msgid "Select a window by clicking on it."
 msgstr ""
 
-#: ../kazam/frontend/window_select.py:143
+#: ../kazam/frontend/window_select.py:156
 msgid "Press ENTER or ESC to cancel"
 msgstr ""
 
 #: ../kazam/frontend/done_recording.py:50
-msgid "Kazam Screencaster - Recording finished"
+msgid "Recording finished"
 msgstr ""
 
 #: ../kazam/frontend/done_recording.py:62
@@ -224,20 +254,12 @@ msgstr ""
 msgid "Save screencast"
 msgstr ""
 
-#: ../kazam/frontend/about_dialog.py:54
-msgid "Record a video of activity on your screen."
+#: ../kazam/frontend/about_dialog.py:58
+msgid "Record a video of activity on your screen or capture a screenshot."
 msgstr ""
 
 #: ../kazam/frontend/save_dialog.py:38
 msgid "Save"
-msgstr ""
-
-#: ../kazam/frontend/save_dialog.py:41
-msgid "Untitled_Screencast"
-msgstr ""
-
-#: ../kazam/frontend/save_dialog.py:43
-msgid "Untitled_Capture.png"
 msgstr ""
 
 #: ../kazam/frontend/main_menu.py:62
@@ -250,10 +272,6 @@ msgstr ""
 
 #: ../kazam/frontend/main_menu.py:63
 msgid "Quit Kazam"
-msgstr ""
-
-#: ../kazam/frontend/main_menu.py:65
-msgid "Preferences"
 msgstr ""
 
 #: ../kazam/frontend/main_menu.py:65
@@ -272,20 +290,12 @@ msgstr ""
 msgid "About Kazam"
 msgstr ""
 
-#: ../kazam/frontend/window_area.py:217
-msgid "Select area by resizing the rectangle"
+#: ../kazam/frontend/window_area.py:189
+msgid "Select an area by clicking and dragging."
 msgstr ""
 
-#: ../kazam/frontend/window_area.py:218
+#: ../kazam/frontend/window_area.py:190
 msgid "Press ENTER to confirm or ESC to cancel"
-msgstr ""
-
-#: ../kazam/frontend/window_countdown.py:110
-msgid "Recording will start in ..."
-msgstr ""
-
-#: ../kazam/frontend/window_countdown.py:111
-msgid "{0}"
 msgstr ""
 
 #: ../kazam/frontend/indicator.py:72
@@ -296,10 +306,10 @@ msgstr ""
 msgid "Record setup"
 msgstr ""
 
-#: ../kazam/backend/grabber.py:111
+#: ../kazam/backend/grabber.py:171
 msgid "Save capture"
 msgstr ""
 
-#: ../kazam/backend/prefs.py:121
+#: ../kazam/backend/prefs.py:137
 msgid "Unknown"
 msgstr ""
