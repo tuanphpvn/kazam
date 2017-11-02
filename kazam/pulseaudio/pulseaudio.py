@@ -23,11 +23,11 @@ import time
 import logging
 logger = logging.getLogger("PulseAudio")
 
-from error_handling import *
+from kazam.pulseaudio.error_handling import *
 from kazam.backend.constants import *
 
 try:
-    from ctypes_pulseaudio import *
+    from kazam.pulseaudio.ctypes_pulseaudio import *
 except:
     raise PAError(PA_LOAD_ERROR, "Unable to load pulseaudio wrapper lib. Is PulseAudio installed?")
 
@@ -284,6 +284,18 @@ class pulseaudio_q:
     def set_source_volume_by_index(self, index, cvolume):
         try:
             pa_context_set_source_volume_by_index(self.pa_ctx, index, cvolume,
+                                                  self._pa_context_success_cb, None)
+            t = time.clock()
+            while time.clock() - t < 5:
+                if self.pa_status == PA_FINISHED:
+                    return 1
+            raise PAError(PA_GET_SOURCES_TIMEOUT, "Unable to get sources, operation timed out.")
+        except:
+            raise PAError(PA_GET_SOURCES_ERROR, "Unable to get sources.")
+
+    def set_source_mute_by_index(self, index, mute):
+        try:
+            pa_context_set_source_mute_by_index(self.pa_ctx, index, mute,
                                                   self._pa_context_success_cb, None)
             t = time.clock()
             while time.clock() - t < 5:

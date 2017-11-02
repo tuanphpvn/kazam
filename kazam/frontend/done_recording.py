@@ -122,12 +122,10 @@ class DoneRecording(Gtk.Window):
 
             if result == Gtk.ResponseType.OK:
                 uri = os.path.join(dialog.get_current_folder(), dialog.get_filename())
-                if self.codec == CODEC_VP8:
-                    if not uri.endswith(".webm"):
-                        uri += ".webm"
-                else:
-                    if not uri.endswith(".mp4"):
-                        uri += ".mp4"
+
+                if not uri.endswith(CODEC_LIST[self.codec][3]):
+                    uri += CODEC_LIST[self.codec][3]
+
                 shutil.move(self.tempfile, uri)
                 dialog.destroy()
                 self.emit("save-done", self.old_path)
@@ -143,7 +141,7 @@ class DoneRecording(Gtk.Window):
 
     def cb_delete_event(self, widget, data):
         self.emit("save-cancel")
-        return True
+        self.destroy()
 
     def cb_radiobutton_save_toggled(self, widget):
         if not widget.get_active():

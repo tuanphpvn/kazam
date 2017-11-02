@@ -20,7 +20,19 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-from kazam.backend.constants import *
+import os
+
+def get_next_filename(dir, prefix, ext):
+    for cnt in range(0, 99999):
+        fname = os.path.join(dir, "{0}_{1}{2}".format(prefix,
+                                                       str(cnt).zfill(5),
+                                                       ext))
+        if os.path.isfile(fname):
+            continue
+        else:
+            return fname
+
+    return "Kazam_recording{0}".format(ext)
 
 def remove_list_dups(seq, idfun = None):
     if idfun is None:
@@ -33,11 +45,3 @@ def remove_list_dups(seq, idfun = None):
         seen[marker] = 1
         result.append(item)
     return result
-
-def get_codec_name(codec):
-    if codec == CODEC_H264:
-        return "H264"
-    elif codec == CODEC_VP8:
-        return "VP8"
-    else:
-        return "(unknown)"

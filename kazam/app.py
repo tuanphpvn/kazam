@@ -21,86 +21,127 @@
 #       MA 02110-1301, USA.
 
 import os
+import sys
 import locale
+import shutil
 import gettext
 import logging
-logger = logging.getLogger("Main")
+import time
 
 from subprocess import Popen
 from gi.repository import Gtk, Gdk, GObject
 from gettext import gettext as _
 
 from kazam.utils import *
+from kazam.backend.prefs import *
 from kazam.backend.constants import *
+from kazam.backend.grabber import Grabber
 from kazam.backend.config import KazamConfig
+from kazam.frontend.main_menu import MainMenu
+from kazam.frontend.window_area import AreaWindow
+from kazam.backend.gstreamer_gi import Screencast
+from kazam.frontend.preferences import Preferences
 from kazam.frontend.about_dialog import AboutDialog
 from kazam.frontend.indicator import KazamIndicator
-from kazam.frontend.window_region import RegionWindow
+from kazam.frontend.window_select import SelectWindow
 from kazam.frontend.done_recording import DoneRecording
 from kazam.frontend.window_countdown import CountdownWindow
 
+logger = logging.getLogger("Main")
+
+#
+# Detect GStreamer version and bail out if lower than 1.0 and no GI
+#
+try:
+    from gi.repository import Gst
+    gst_gi = Gst.version()
+    if not gst_gi[0]:
+        logger.critical("Gstreamer 1.0 or higher requred, bailing out.")
+        gst_gi = None
+        sys.exit(0)
+    else:
+        logger.debug("Gstreamer version detected: {0}.{1}.{2}.{3}".format(gst_gi[0],
+                                                                      gst_gi[1],
+                                                                      gst_gi[2],
+                                                                      gst_gi[3]))
+except ImportError:
+    logger.critical("Gstreamer 1.0 or higher requred, bailing out.")
+    sys.exit(0)
+
 class KazamApp(GObject.GObject):
 
-    def __init__(self, datadir, dist, debug, test, sound):
+    def __init__(self, datadir, dist, debug, test, sound, silent):
         GObject.GObject.__init__(self)
         logger.debug("Setting variables.")
-        self.datadir = datadir
-        self.debug = debug
-        self.test = test
-        self.dist = dist
-        self.sound = not sound     # Parameter is called nosound and if true, then we don't have sound.
-                                   # Tricky parameters are tricky!
+
+        prefs.datadir = datadir
+        prefs.get_sound_files()
+
+        self.startup = True
+        prefs.debug = debug
+        prefs.test = test
+        prefs.dist = dist
+        prefs.silent = silent
+        prefs.sound = not sound     # Parameter is called nosound and if true, then we don't have sound.
+                                    # Tricky parameters are tricky!
+
         self.setup_translations()
 
-        if self.sound:
+        if prefs.sound:
             try:
                 from kazam.pulseaudio.pulseaudio import pulseaudio_q
-                self.sound = True
+                prefs.sound = True
             except:
                 logger.warning("Pulse Audio Failed to load. Sound recording disabled.")
-                self.sound = False
+                prefs.sound = False
 
         self.icons = Gtk.IconTheme.get_default()
-        self.icons.append_search_path(os.path.join(datadir,"icons", "48x48", "apps"))
-        self.icons.append_search_path(os.path.join(datadir,"icons", "16x16", "apps"))
+        self.icons.append_search_path(os.path.join(prefs.datadir,"icons", "48x48", "apps"))
+        self.icons.append_search_path(os.path.join(prefs.datadir,"icons", "16x16", "apps"))
 
         # Initialize all the variables
 
-        self.video_sources = []
-        self.video_source = 0
-        self.audio_source = 0
-        self.audio2_source = 0
-        self.codec = 0
         self.main_x = 0
         self.main_y = 0
         self.countdown = None
         self.tempfile = ""
         self.recorder = None
-        self.capture_cursor = True
-        self.region_window = None
-        self.region = None
+        self.area_window = None
         self.old_path = None
-        self.timer_window = True
         self.in_countdown = False
         self.recording_paused = False
+        self.recording = False
+        self.main_mode = 0
+        self.record_mode = 0
+        self.last_mode = None
 
-        if self.sound:
-            self.pa_q = pulseaudio_q()
-            self.pa_q.start()
+        if prefs.sound:
+            prefs.pa_q = pulseaudio_q()
+            prefs.pa_q.start()
+
+        self.mainmenu = MainMenu()
 
         #
         # Setup config
         #
         self.config = KazamConfig()
 
+        self.read_config()
+
         logger.debug("Connecting indicator signals.")
-        self.indicator = KazamIndicator()
+        logger.debug("Starting in silent mode: {0}".format(prefs.silent))
+        self.indicator = KazamIndicator(prefs.silent)
         self.indicator.connect("indicator-quit-request", self.cb_quit_request)
         self.indicator.connect("indicator-show-request", self.cb_show_request)
         self.indicator.connect("indicator-start-request", self.cb_start_request)
         self.indicator.connect("indicator-stop-request", self.cb_stop_request)
         self.indicator.connect("indicator-pause-request", self.cb_pause_request)
         self.indicator.connect("indicator-unpause-request", self.cb_unpause_request)
+        self.indicator.connect("indicator-about-request", self.cb_about_request)
+
+        self.mainmenu.connect("file-quit", self.cb_quit_request)
+        self.mainmenu.connect("file-preferences", self.cb_preferences_request)
+        self.mainmenu.connect("help-about", self.cb_help_about)
 
         #
         # Setup UI
@@ -108,7 +149,7 @@ class KazamApp(GObject.GObject):
         logger.debug("Main Window UI setup.")
 
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(os.path.join(self.datadir, "ui", "kazam.ui"))
+        self.builder.add_from_file(os.path.join(prefs.datadir, "ui", "kazam.ui"))
         self.builder.connect_signals(self)
         for w in self.builder.get_objects():
             if issubclass(type(w), Gtk.Buildable):
@@ -116,6 +157,85 @@ class KazamApp(GObject.GObject):
                 setattr(self, name, w)
             else:
                 logger.debug("Unable to get name for '%s'" % w)
+
+        # Main Menu
+        self.MainGrid.attach(self.mainmenu.menubar, 0, 0, 1, 1)
+
+        self.context = self.toolbar_main.get_style_context()
+        self.context.add_class(Gtk.STYLE_CLASS_PRIMARY_TOOLBAR)
+
+        self.btn_cast = Gtk.RadioToolButton(group=None)
+        self.btn_cast.set_label(_("Screencast"))
+        self.btn_cast.set_tooltip_text(_("Record a video of your desktop."))
+        img1 = Gtk.Image.new_from_file(os.path.join(prefs.datadir, "icons", "light", "screencast.png"))
+        self.btn_cast.set_icon_widget(img1)
+        self.btn_cast.set_active(True)
+        self.btn_cast.set_name("MAIN_SCREENCAST")
+        self.btn_cast.connect("toggled", self.cb_main_toggled)
+
+        self.btn_shot = Gtk.RadioToolButton(group=self.btn_cast)
+        self.btn_shot.set_label(_("Screenshot"))
+        self.btn_shot.set_tooltip_text(_("Record a picture of your desktop."))
+        img2 = Gtk.Image.new_from_file(os.path.join(prefs.datadir, "icons", "light", "screenshot-1.png"))
+        self.btn_shot.set_icon_widget(img2)
+        self.btn_shot.set_name("MAIN_SCREENSHOT")
+        self.btn_shot.connect("toggled", self.cb_main_toggled)
+
+        self.sep_1 = Gtk.SeparatorToolItem()
+        self.sep_1.set_draw(False)
+        self.sep_1.set_expand(True)
+        self.toolbar_main.insert(self.sep_1, -1)
+        self.toolbar_main.insert(self.btn_cast, -1)
+        self.toolbar_main.insert(self.btn_shot, -1)
+        self.toolbar_main.insert(self.sep_1, -1)
+
+        # Auxiliary toolbar
+        self.btn_full = Gtk.RadioToolButton(group=None)
+        self.btn_full.set_label(_("Fullscreen"))
+        self.btn_full.set_tooltip_text(_("Capture contents of the current screen."))
+        img3 = Gtk.Image.new_from_file(os.path.join(prefs.datadir, "icons", "dark", "fullscreen.png"))
+        self.btn_full.set_icon_widget(img3)
+        self.btn_full.set_active(True)
+        self.btn_full.set_name("MODE_FULL")
+        self.btn_full.connect("toggled", self.cb_record_mode_toggled)
+
+        self.btn_allscreens = Gtk.RadioToolButton(group=self.btn_full)
+        self.btn_allscreens.set_label(_("All Screens"))
+        self.btn_allscreens.set_tooltip_text(_("Capture contents of all of your screens."))
+        img4 = Gtk.Image.new_from_file(os.path.join(prefs.datadir, "icons", "dark", "all-screens.png"))
+        self.btn_allscreens.set_icon_widget(img4)
+        self.btn_allscreens.set_name("MODE_ALL")
+        self.btn_allscreens.connect("toggled", self.cb_record_mode_toggled)
+
+        self.btn_window = Gtk.RadioToolButton(group=self.btn_full)
+        self.btn_window.set_label(_("Window"))
+        self.btn_window.set_tooltip_text(_("Capture contents of a single window."))
+        img5 = Gtk.Image.new_from_file(os.path.join(prefs.datadir, "icons", "dark", "window.png"))
+        self.btn_window.set_icon_widget(img5)
+        self.btn_window.set_name("MODE_WIN")
+        self.btn_window.connect("toggled", self.cb_record_mode_toggled)
+        self.btn_window.connect("clicked", self.cb_record_window_clicked)
+
+        self.btn_area = Gtk.RadioToolButton(group=self.btn_full)
+        self.btn_area.set_label(_("Area"))
+        self.btn_area.set_tooltip_text(_("Capture a pre-selected area of your screen."))
+        img6 = Gtk.Image.new_from_file(os.path.join(prefs.datadir, "icons", "dark", "area.png"))
+        self.btn_area.set_icon_widget(img6)
+        self.btn_area.set_name("MODE_AREA")
+        self.btn_area.connect("toggled", self.cb_record_mode_toggled)
+        self.btn_area.connect("clicked", self.cb_record_area_clicked)
+
+        self.sep_2 = Gtk.SeparatorToolItem()
+        self.sep_2.set_draw(False)
+        self.sep_2.set_expand(True)
+        #self.toolbar_aux.insert(self.sep_2, -1)
+        self.toolbar_aux.insert(self.btn_full, -1)
+        self.toolbar_aux.insert(self.btn_allscreens, -1)
+        self.toolbar_aux.insert(self.btn_window, -1)
+        self.toolbar_aux.insert(self.btn_area, -1)
+        #self.toolbar_aux.insert(self.sep_2, -1)
+
+        self.ntb_main.set_current_page(0)
 
         #
         # Take care of screen size changes.
@@ -125,173 +245,190 @@ class KazamApp(GObject.GObject):
         self.window.connect("configure-event", self.cb_configure_event)
 
         # Fetch sources info, take care of all the widgets and saved settings and show main window
-        if self.sound:
-            self.get_sources()
-            self.populate_widgets()
+        if prefs.sound:
+            prefs.get_audio_sources()
+
+        if not prefs.silent:
+            self.window.show_all()
         else:
-            self.get_sources(audio = False)
-            self.populate_widgets(audio = False)
+            logger.info("Starting in silent mode:\n  SUPER-CTRL-W to toggle main window.\n  SUPER-CTRL-Q to quit.")
 
-        self.window.show_all()
-        self.restore_state()
+        self.restore_UI()
 
-        if not self.sound:
+        if not prefs.sound:
             self.combobox_audio.set_sensitive(False)
             self.combobox_audio2.set_sensitive(False)
-            self.switch_audio.set_sensitive(False)
-            self.switch_audio2.set_sensitive(False)
             self.volumebutton_audio.set_sensitive(False)
             self.volumebutton_audio2.set_sensitive(False)
 
-        # self.keyboard_handler = KeyboardHandler(self.cb_keyboard_press)
-        # self.keyboard_handler.start()
+        HW.get_current_screen(self.window)
+        self.startup = False
 
     #
     # Callbacks, go down here ...
     #
+
+    #
+    # Mode of operation toggles
+    #
+
+    def cb_main_toggled(self, widget):
+        name = widget.get_name()
+        if name == "MAIN_SCREENCAST" and widget.get_active():
+            logger.debug("Main toggled: {0}".format(name))
+            self.main_mode = MODE_SCREENCAST
+            self.ntb_main.set_current_page(0)
+            self.btn_window.set_sensitive(True)
+            self.indicator.menuitem_start.set_label(_("Start recording"))
+
+        elif name == "MAIN_SCREENSHOT" and widget.get_active():
+            logger.debug("Main toggled: {0}".format(name))
+            self.main_mode = MODE_SCREENSHOT
+            self.ntb_main.set_current_page(1)
+            if self.record_mode == MODE_WIN:
+                self.last_mode.set_active(True)
+            self.btn_window.set_sensitive(False)
+            self.indicator.menuitem_start.set_label(_("Take screenshot"))
+
+
+    #
+    # Record mode toggles
+    #
+    def cb_record_mode_toggled(self, widget):
+        if widget.get_active():
+            self.current_mode = widget
+        else:
+            self.last_mode = widget
+
+        if widget.get_name() == "MODE_AREA" and widget.get_active():
+            logger.debug("Area ON.")
+            self.area_window = AreaWindow()
+            self.tmp_sig1 = self.area_window.connect("area-selected", self.cb_area_selected)
+            self.tmp_sig2 = self.area_window.connect("area-canceled", self.cb_area_canceled)
+            self.record_mode = MODE_AREA
+
+        if widget.get_name() == "MODE_AREA" and not widget.get_active():
+            logger.debug("Area OFF.")
+            if self.area_window:
+                self.area_window.disconnect(self.tmp_sig1)
+                self.area_window.disconnect(self.tmp_sig2)
+                self.area_window.window.destroy()
+                self.area_window = None
+
+        if widget.get_name() == "MODE_FULL" and widget.get_active():
+            logger.debug("Capture full screen.")
+            self.record_mode = MODE_FULL
+
+        if widget.get_name() == "MODE_ALL" and widget.get_active():
+            logger.debug("Capture all screens.")
+            self.record_mode = MODE_ALL
+
+        if widget.get_name() == "MODE_WIN" and widget.get_active():
+            logger.debug("Window capture ON.")
+            self.select_window = SelectWindow()
+            self.tmp_sig3 = self.select_window.connect("window-selected", self.cb_window_selected)
+            self.tmp_sig4 = self.select_window.connect("window-canceled", self.cb_window_canceled)
+            self.record_mode = MODE_WIN
+
+        if widget.get_name() == "MODE_WIN" and not widget.get_active():
+            logger.debug("Window capture OFF.")
+            if self.select_window:
+                self.select_window.disconnect(self.tmp_sig3)
+                self.select_window.disconnect(self.tmp_sig4)
+                self.select_window.window.destroy()
+                self.select_window = None
+
+    def cb_record_area_clicked(self, widget):
+        if self.area_window:
+            logger.debug("Area mode clicked.")
+            self.area_window.window.show_all()
+            self.window.set_sensitive(False)
+
+    def cb_record_window_clicked(self, widget):
+        if self.select_window:
+            logger.debug("Window mode clicked.")
+            self.select_window.window.show_all()
+            self.window.set_sensitive(False)
+
+    def cb_area_selected(self, widget):
+        logger.debug("Area selected: SX: {0}, SY: {1}, EX: {2}, EY: {3}".format(
+            self.area_window.startx,
+            self.area_window.starty,
+            self.area_window.endx,
+            self.area_window.endy))
+        self.window.set_sensitive(True)
+        prefs.area = (self.area_window.startx,
+                     self.area_window.starty,
+                     self.area_window.endx,
+                     self.area_window.endy,
+                     self.area_window.width,
+                     self.area_window.height)
+
+    def cb_area_canceled(self, widget):
+        logger.debug("Area selection canceled.")
+        self.window.set_sensitive(True)
+        self.last_mode.set_active(True)
+
+    def cb_window_selected(self, widget):
+        prefs.xid = self.select_window.xid
+        logger.debug("Window selected: {0}".format(prefs.xid))
+        self.window.set_sensitive(True)
+
+    def cb_window_canceled(self, widget):
+        logger.debug("Window selection canceled.")
+        self.window.set_sensitive(True)
+        self.last_mode.set_active(True)
+
     def cb_screen_size_changed(self, screen):
         logger.debug("Screen size changed.")
-        old_source = self.video_source
-        old_num = len(self.video_sources)
-        self.get_sources(audio = False)
-        self.populate_widgets(audio = False)
-        if old_source > old_num:
-            old_source = 0
-        self.combobox_video.set_active(old_source)
+        HW.get_screens()
 
     def cb_configure_event(self, widget, event):
         if event.type == Gdk.EventType.CONFIGURE:
-            #
-            # When you close main window up to 5 configure events fire up some of them have X and Y set to 0 ?!?
-            #
-            if event.x or event.y > 0:
-                self.main_x = event.x
-                self.main_y = event.y
-
+            self.main_x = event.x
+            self.main_y = event.y
 
     def cb_quit_request(self, indicator):
         logger.debug("Quit requested.")
+        (self.main_x, self.main_y) = self.window.get_position()
         try:
             os.remove(self.recorder.tempfile)
             os.remove("{0}.mux".format(self.recorder.tempfile))
-        except:
+        except OSError:
+            logger.info("Unable to delete one of the temporary files. Check your temporary directory.")
+        except AttributeError:
             pass
 
-        self.save_state()
+        self.save_config()
 
-        if self.sound:
-            self.pa_q.end()
+        if prefs.sound:
+            prefs.pa_q.end()
 
         Gtk.main_quit()
 
+    def cb_preferences_request(self, indicator):
+        logger.debug("Preferences requested.")
+        self.preferences_window = Preferences()
+        self.preferences_window.open()
+
     def cb_show_request(self, indicator):
-        logger.debug("Show requested, raising window.")
-        self.window.show_all()
-        self.window.present()
-        print "Moving to:", self.main_x, self.main_y
-        self.window.move(self.main_x, self.main_y)
+        if not self.window.get_property("visible"):
+            logger.debug("Show requested, raising window.")
+            self.window.show_all()
+            self.window.present()
+            self.window.move(self.main_x, self.main_y)
+        else:
+            self.window.hide()
 
     def cb_close_clicked(self, indicator):
         (self.main_x, self.main_y) = self.window.get_position()
-        print "Recorded:", self.main_x, self.main_y
         self.window.hide()
-        
-    def cb_about_clicked(self, activated):
-        AboutDialog(self.icons)    
+
+    def cb_about_request(self, activated):
+        AboutDialog(self.icons)
 
     def cb_delete_event(self, widget, user_data):
-        (self.main_x, self.main_y) = self.window.get_position()
-        return self.window.hide_on_delete()
-
-    def cb_video_switch(self, widget, user_data):
-        if widget.get_active():
-            logger.debug("Video ON.")
-            self.combobox_video.set_sensitive(True)
-            self.btn_record.set_sensitive(True)
-        else:
-            logger.debug("Video OFF.")
-            self.combobox_video.set_sensitive(False)
-            self.btn_record.set_sensitive(False)
-            self.video_source = None
-
-
-    def cb_audio_switch(self, widget, user_data):
-        if widget.get_active():
-            logger.debug("Audio1 ON.")
-            self.combobox_audio.set_sensitive(True)
-            self.switch_audio2.set_sensitive(True)
-            self.volumebutton_audio.set_sensitive(True)
-            self.audio_source = self.combobox_audio.get_active()
-        else:
-            logger.debug("Audio1 OFF.")
-            self.combobox_audio.set_sensitive(False)
-            self.volumebutton_audio.set_sensitive(False)
-            self.combobox_audio2.set_sensitive(False)
-            self.switch_audio2.set_sensitive(False)
-            self.switch_audio2.set_active(False)
-            self.volumebutton_audio2.set_sensitive(False)
-            self.audio_source = None
-            self.audio2_source = None
-
-    def cb_audio2_switch(self, widget, user_data):
-        if widget.get_active():
-            logger.debug("Audio2 ON.")
-            self.combobox_audio2.set_sensitive(True)
-            self.volumebutton_audio2.set_sensitive(True)
-            self.audio2_source  = self.combobox_audio2.get_active()
-        else:
-            logger.debug("Audio2 OFF.")
-            self.audio2_source = None
-            self.combobox_audio2.set_sensitive(False)
-            self.volumebutton_audio2.set_sensitive(False)
-            self.audio2_source = None
-
-    def cb_audio_changed(self, widget):
-        logger.debug("Audio Changed.")
-        self.audio_source = self.combobox_audio.get_active()
-        self.audio2_source  = self.combobox_audio2.get_active()
-
-        logger.debug("  - A_1 {0}".format(self.audio_source))
-        logger.debug("  - A_2 {0}".format(self.audio2_source))
-
-        pa_audio_idx =  self.audio_sources[self.audio_source][0]
-        pa_audio2_idx =  self.audio_sources[self.audio2_source][0]
-        logger.debug("  - PA Audio1 IDX: {0}".format(pa_audio_idx))
-        logger.debug("  - PA Audio2 IDX: {0}".format(pa_audio2_idx))
-        self.audio_source_info = self.pa_q.get_source_info_by_index(pa_audio_idx)
-        self.audio2_source_info = self.pa_q.get_source_info_by_index(pa_audio2_idx)
-
-        if len(self.audio_source_info):
-            logger.debug("New Audio1:\n  {0}".format(self.audio_source_info[3]))
-        else:
-            logger.debug("New Audio1:\n  Error retrieving data.")
-
-        if len(self.audio2_source_info):
-            logger.debug("New Audio2:\n  {0}".format(self.audio2_source_info[3]))
-        else:
-            logger.debug("New Audio2:\n  Error retrieving data.")
-
-        if self.audio_source == self.audio2_source:
-            if self.audio_source < len(self.audio_sources):
-                self.audio2_source += 1
-            else:
-                self.audio2_source = 0
-
-            #
-            # This isn't probably the smartest idea, right?
-            #
-            self.combobox_audio2.set_active(self.audio2_source)
-            self.switch_audio2.set_active(False)
-            self.combobox_audio2.set_sensitive(False)
-
-    def cb_video_changed(self, widget):
-        logger.debug("Video changed.")
-        self.video_source = self.combobox_video.get_active()
-        logger.debug("New Video: {0}".format(self.video_sources[self.video_source]))
-
-    def cb_codec_changed(self, widget):
-        self.codec = self.combobox_codec.get_active()
-        logger.debug("Encoding changed to {0}.".format(get_codec_name(self.codec)))
+        self.cb_quit_request(None)
 
     def cb_start_request(self, widget):
         logger.debug("Start recording selected.")
@@ -301,33 +438,21 @@ class KazamApp(GObject.GObject):
         logger.debug("Record clicked, invoking Screencast.")
         self.run_counter()
 
-    def cb_volume_changed(self, widget, value):
-        logger.debug("Volume 1 changed, new value: {0}".format(value))
-        idx = self.combobox_audio.get_active()
-        pa_idx =  self.audio_sources[idx][0]
-        chn = self.audio_source_info[2].channels
-        cvol = self.pa_q.dB_to_cvolume(chn, value-60)
-        self.pa_q.set_source_volume_by_index(pa_idx, cvol)
-
-    def cb_volume2_changed(self, widget, value):
-        logger.debug("Volume 2 changed, new value: {0}".format(value))
-        idx = self.combobox_audio2.get_active()
-        pa_idx =  self.audio_sources[idx][0]
-        chn = self.audio2_source_info[2].channels
-        cvol = self.pa_q.dB_to_cvolume(chn, value-60)
-        self.pa_q.set_source_volume_by_index(pa_idx, cvol)
-
     def cb_counter_finished(self, widget):
         logger.debug("Counter finished.")
         self.in_countdown = False
         self.countdown = None
-        self.indicator.menuitem_finish.set_label(_("Finish recording"))
-        self.indicator.menuitem_pause.set_sensitive(True)
         self.indicator.blink_set_state(BLINK_STOP)
-        self.indicator.start_recording()
-        self.recorder.start_recording()
+        if self.main_mode == MODE_SCREENCAST:
+            self.indicator.menuitem_finish.set_label(_("Finish recording"))
+            self.indicator.menuitem_pause.set_sensitive(True)
+            self.indicator.start_recording()
+            self.recorder.start_recording()
+        elif self.main_mode == MODE_SCREENSHOT:
+            self.grabber.grab()
 
     def cb_stop_request(self, widget):
+        self.recording = False
         if self.in_countdown:
             logger.debug("Cancel countdown request.")
             self.countdown.cancel_countdown()
@@ -346,17 +471,46 @@ class KazamApp(GObject.GObject):
             logger.debug("Waiting for data to flush.")
 
     def cb_flush_done(self, widget):
-        self.done_recording = DoneRecording(self.icons,
+        if self.main_mode == MODE_SCREENCAST and prefs.autosave_video:
+            logger.debug("Autosaving enabled.")
+            fname = get_next_filename(prefs.video_dest,
+                                      prefs.autosave_video_file,
+                                      CODEC_LIST[prefs.codec][3])
+
+            shutil.move(self.tempfile, fname)
+
+            self.window.set_sensitive(True)
+            self.window.show()
+            self.window.present()
+        elif self.main_mode == MODE_SCREENCAST:
+            self.done_recording = DoneRecording(self.icons,
                                             self.tempfile,
-                                            self.codec,
+                                            prefs.codec,
                                             self.old_path)
-        logger.debug("Done Recording initialized.")
-        self.done_recording.connect("save-done", self.cb_save_done)
-        self.done_recording.connect("save-cancel", self.cb_save_cancel)
-        self.done_recording.connect("edit-request", self.cb_edit_request)
-        self.done_recording.show_all()
-        logger.debug("Done recording signals connected.")
-        self.window.set_sensitive(False)
+            logger.debug("Done Recording initialized.")
+            self.done_recording.connect("save-done", self.cb_save_done)
+            self.done_recording.connect("save-cancel", self.cb_save_cancel)
+            self.done_recording.connect("edit-request", self.cb_edit_request)
+            logger.debug("Done recording signals connected.")
+            self.done_recording.show_all()
+            self.window.set_sensitive(False)
+
+        elif self.main_mode == MODE_SCREENSHOT:
+            self.grabber.connect("save-done", self.cb_save_done)
+            self.indicator.recording = False
+            self.indicator.menuitem_start.set_sensitive(True)
+            self.indicator.menuitem_pause.set_sensitive(False)
+            self.indicator.menuitem_pause.set_active(False)
+            self.indicator.menuitem_finish.set_sensitive(False)
+            self.indicator.menuitem_show.set_sensitive(True)
+            self.indicator.menuitem_quit.set_sensitive(True)
+
+            if prefs.autosave_picture:
+                fname = get_next_filename(prefs.picture_dest, prefs.autosave_picture_file, ".png")
+                self.grabber.autosave(fname)
+            else:
+                self.grabber.save_capture(self.old_path)
+
 
     def cb_pause_request(self, widget):
         logger.debug("Pause requested.")
@@ -380,7 +534,9 @@ class KazamApp(GObject.GObject):
         try:
             logger.debug("Save canceled, removing {0}".format(self.tempfile))
             os.remove(self.tempfile)
-        except:
+        except OSError:
+            logger.info("Failed to remove tempfile {0}".format(self.tempfile))
+        except AttributeError:
             logger.info("Failed to remove tempfile {0}".format(self.tempfile))
             pass
 
@@ -401,53 +557,25 @@ class KazamApp(GObject.GObject):
         self.window.set_sensitive(True)
         self.window.show_all()
 
-    def cb_cursor_switch(self, widget, user_data):
-        if self.switch_cursor.get_active():
-            logger.debug("Cursor capturing ON.")
-            self.capture_cursor = True
-        else:
-            logger.debug("Cursor capturing OFF.")
-            self.capture_cursor = False
+    def cb_check_cursor(self, widget):
+        prefs.capture_cursor = widget.get_active()
+        logger.debug("Capture cursor: {0}.".format(prefs.capture_cursor))
 
-    def cb_timer_switch(self, widget, user_data):
-        if self.switch_timer.get_active():
-            logger.debug("Timer Window ON.")
-            self.timer_window = True
-        else:
-            logger.debug("Timer Window OFF.")
-            self.timer_window = False
+    def cb_check_cursor_pic(self, widget):
+        prefs.capture_cursor_pic = widget.get_active()
+        logger.debug("Capture cursor_pic: {0}.".format(prefs.capture_cursor_pic))
 
-    def cb_region_toggled(self, widget):
-        if self.btn_region.get_active():
-            logger.debug("Region ON.")
-            self.region_window = RegionWindow(self.region)
-            self.region_window.connect("region-selected", self.cb_region_selected)
-            self.region_window.connect("region-canceled", self.cb_region_canceled)
-            self.window.set_sensitive(False)
-        else:
-            logger.debug("Region OFF.")
-            self.region_window.window.destroy()
-            self.region_window = None
+    def cb_check_speakers(self, widget):
+        prefs.capture_speakers = widget.get_active()
+        logger.debug("Capture speakers: {0}.".format(prefs.capture_speakers))
 
-    def cb_region_selected(self, widget):
-        logger.debug("Region selected: {0}, {1}, {2}, {3}".format(
-                                                                   self.region_window.startx,
-                                                                   self.region_window.starty,
-                                                                   self.region_window.endx,
-                                                                   self.region_window.endy))
-        self.window.set_sensitive(True)
-        self.region = (self.region_window.startx,
-                       self.region_window.starty,
-                       self.region_window.endx,
-                       self.region_window.endy)
+    def cb_check_microphone(self, widget):
+        prefs.capture_microphone = widget.get_active()
+        logger.debug("Capture microphone: {0}.".format(prefs.capture_microphone))
 
-    def cb_region_canceled(self, widget):
-        logger.debug("Region Canceled.")
-        self.window.set_sensitive(True)
-        self.btn_region.set_active(False)
-
-    # def cb_keyboard_press(self):
-    #     print "YAY BACK"
+    def cb_spinbutton_delay_change(self, widget):
+        prefs.countdown_timer = widget.get_value_as_int()
+        logger.debug("Start delay now: {0}".format(prefs.countdown_timer))
 
     #
     # Other somewhat useful stuff ...
@@ -457,8 +585,12 @@ class KazamApp(GObject.GObject):
         #
         # Annoyances with the menus
         #
-        (self.main_x, self.main_y) = self.window.get_position()
+        (main_x, main_y) = self.window.get_position()
+        if main_x and main_y:
+            self.main_x = main_x
+            self.main_y = main_y
 
+        self.indicator.recording = True
         self.indicator.menuitem_start.set_sensitive(False)
         self.indicator.menuitem_pause.set_sensitive(False)
         self.indicator.menuitem_finish.set_sensitive(True)
@@ -467,45 +599,55 @@ class KazamApp(GObject.GObject):
         self.indicator.menuitem_finish.set_label(_("Cancel countdown"))
         self.in_countdown = True
 
-        from kazam.backend.gstreamer import Screencast
-
-        self.recorder = Screencast(self.debug)
         self.indicator.blink_set_state(BLINK_START)
 
-        if self.sound:
-            if self.audio_source is not None:
-                audio_source = self.audio_sources[self.audio_source][1]
+        if self.main_mode == MODE_SCREENCAST and prefs.sound:
+            if prefs.capture_speakers and prefs.audio_source > 0:
+                audio_source = prefs.audio_sources[prefs.audio_source][1]
             else:
                 audio_source = None
 
-            if self.audio2_source is not None:
-                audio2_source = self.audio_sources[self.audio2_source][1]
+            if prefs.capture_microphone and prefs.audio2_source > 0:
+                audio2_source = prefs.audio_sources[prefs.audio2_source][1]
             else:
                 audio2_source = None
         else:
             audio_source = None
             audio2_source = None
 
-        if self.video_source is not None:
-            video_source = self.video_sources[self.video_source]
+        #
+        # Get appropriate coordinates for recording
+        #
+
+        video_source = None
+
+        if self.record_mode == MODE_FULL:
+            screen = HW.get_current_screen(self.window)
+            video_source = HW.screens[screen]
         else:
-            video_source = None
+            video_source = HW.combined_screen
 
-        framerate = self.spinbutton_framerate.get_value_as_int()
-        self.recorder.setup_sources(video_source,
-                                    audio_source,
-                                    audio2_source,
-                                    self.codec,
-                                    self.capture_cursor,
-                                    framerate,
-                                    self.region,
-                                    self.test,
-                                    self.dist)
+        if self.main_mode == MODE_SCREENCAST:
+            self.recorder = Screencast()
+            self.recorder.setup_sources(video_source,
+                                        audio_source,
+                                        audio2_source,
+                                        prefs.area if self.record_mode == MODE_AREA else None,
+                                        prefs.xid if self.record_mode == MODE_WIN else None)
 
-        self.recorder.connect("flush-done", self.cb_flush_done)
-        self.countdown = CountdownWindow(self.indicator, show_window = self.timer_window)
+            self.recorder.connect("flush-done", self.cb_flush_done)
+
+        elif self.main_mode == MODE_SCREENSHOT:
+            self.grabber = Grabber()
+            self.grabber.setup_sources(video_source,
+                                       prefs.area if self.record_mode == MODE_AREA else None)
+            self.grabber.connect("flush-done", self.cb_flush_done)
+
+
+        self.countdown = CountdownWindow(self.indicator, show_window = prefs.countdown_splash)
         self.countdown.connect("counter-finished", self.cb_counter_finished)
-        self.countdown.run(self.spinbutton_counter.get_value_as_int())
+        self.countdown.run(prefs.countdown_timer)
+        self.recording = True
         logger.debug("Hiding main window.")
         self.window.hide()
 
@@ -514,207 +656,81 @@ class KazamApp(GObject.GObject):
         gettext.textdomain("kazam")
         try:
             locale.setlocale(locale.LC_ALL, "")
-        except Exception, e:
-            logger.exception("setlocale failed")
+        except Exception as e:
+            logger.exception("EXCEPTION: Setlocale failed, no language support.")
 
-    def restore_state(self):
-        video_toggled = self.config.getboolean("main", "video_toggled")
-        audio_toggled = self.config.getboolean("main", "audio_toggled")
-        audio2_toggled = self.config.getboolean("main", "audio2_toggled")
-
-        video_source = self.config.getint("main", "video_source")
-        audio_source = self.config.getint("main", "audio_source")
-        audio2_source = self.config.getint("main", "audio2_source")
-
-        self.switch_video.set_active(video_toggled)
+    def read_config (self):
+        prefs.audio_source = self.config.getint("main", "audio_source")
+        prefs.audio2_source = self.config.getint("main", "audio2_source")
+        logger.debug("Restoring Audio source state: {0} {1}".format(
+            prefs.audio_source,
+            prefs.audio2_source))
 
         self.main_x = self.config.getint("main", "last_x")
         self.main_y = self.config.getint("main", "last_y")
 
+        prefs.codec = self.config.getint("main", "codec")
+
+        prefs.countdown_timer = self.config.getfloat("main", "counter")
+        prefs.framerate = self.config.getfloat("main", "framerate")
+
+        prefs.capture_cursor = self.config.getboolean("main", "capture_cursor")
+        prefs.capture_microphone = self.config.getboolean("main", "capture_microphone")
+        prefs.capture_speakers = self.config.getboolean("main", "capture_speakers")
+
+        prefs.capture_cursor_pic = self.config.getboolean("main", "capture_cursor_pic")
+
+        prefs.countdown_splash = self.config.getboolean("main", "countdown_splash")
+
+        prefs.autosave_video = self.config.getboolean("main", "autosave_video")
+        prefs.autosave_video_file = self.config.get("main", "autosave_video_file")
+
+        prefs.autosave_picture = self.config.getboolean("main", "autosave_picture")
+        prefs.autosave_picture_file = self.config.get("main", "autosave_picture_file")
+
+        prefs.shutter_sound = self.config.getboolean("main", "shutter_sound")
+        prefs.shutter_type = self.config.getint("main", "shutter_type")
+
+    def restore_UI (self):
+
         self.window.move(self.main_x, self.main_y)
+        self.chk_cursor.set_active(prefs.capture_cursor)
+        self.chk_speakers.set_active(prefs.capture_speakers)
+        self.chk_microphone.set_active(prefs.capture_microphone)
 
-        logger.debug("Restoring state - sources: V ({0}), A_1 ({1}), A_2 ({2})".format(video_source,
-                                                                                        audio_source,
-                                                                                        audio2_source))
-        self.video_source = video_source
+        self.chk_cursor_pic.set_active(prefs.capture_cursor_pic)
 
-        self.combobox_video.set_active(video_source)
-        self.combobox_video.set_sensitive(video_toggled)
+        self.spinbutton_delay.set_value(prefs.countdown_timer)
 
-        if self.sound:
-            self.switch_audio.set_active(audio_toggled)
-            self.switch_audio2.set_active(audio2_toggled)
-
-
-            self.combobox_audio.set_active(audio_source)
-            self.combobox_audio.set_sensitive(audio_toggled)
-
-            self.combobox_audio2.set_active(audio2_source)
-            self.combobox_audio2.set_sensitive(audio2_toggled)
-
-            logger.debug("Getting volume info.")
-            pa_audio_idx =  self.audio_sources[self.audio_source][0]
-            pa_audio2_idx =  self.audio_sources[self.audio2_source][0]
-            audio_info = self.pa_q.get_source_info_by_index(pa_audio_idx)
-            audio2_info = self.pa_q.get_source_info_by_index(pa_audio2_idx)
-
-            #
-            # TODO: Deal with this in a different way
-            #
-            if len(audio_info) > 0:
-                audio_vol = 60 + self.pa_q.cvolume_to_dB(audio_info[2])
-            else:
-                logger.debug("Error getting volume info for Audio 1")
-                audio_vol = 0
-            if len(audio2_info) > 0:
-                audio2_vol = 60 + self.pa_q.cvolume_to_dB(audio2_info[2])
-            else:
-                logger.debug("Error getting volume info for Audio 2")
-                audio2_vol = 0
-
-            logger.debug("Restoring state - volume: A_1 ({0}), A_2 ({1})".format(audio_vol,
-                                                                                   audio2_vol))
-            self.volumebutton_audio.set_sensitive(audio_toggled)
-            self.volumebutton_audio.set_value(audio_vol)
-            self.volumebutton_audio2.set_sensitive(audio2_toggled)
-            self.volumebutton_audio2.set_value(audio2_vol)
-
-            if len(self.audio_sources) == 1:
-                self.combobox_audio2.set_active(self.combobox_audio.get_active())
-                self.combobox_audio2.set_sensitive(False)
-                self.switch_audio2.set_active(False)
-                self.switch_audio2.set_sensitive(False)
-
-            if audio_toggled:
-                self.switch_audio2.set_sensitive(True)
-                self.audio_source = audio_source
-            else:
-                self.switch_audio2.set_sensitive(False)
-                self.switch_audio2.set_active(False)
-                self.audio_source = None
-
-            if audio2_toggled:
-                self.audio2_source = audio2_source
-            else:
-                self.audio2_source = None
-
-
-        codec = self.config.getint("main", "codec")
-        self.combobox_codec.set_active(codec)
-        self.codec = codec
-
-        self.spinbutton_counter.set_value(self.config.getfloat("main", "counter"))
-        self.spinbutton_framerate.set_value(self.config.getfloat("main", "framerate"))
-
-        self.switch_cursor.set_active(self.config.getboolean("main", "capture_cursor"))
-        self.switch_timer.set_active(self.config.getboolean("main", "timer_window"))
-
-        if video_toggled:
-            self.btn_record.set_sensitive(True)
-        else:
-            self.btn_record.set_sensitive(False)
-
-
-    def save_state(self):
+    def save_config(self):
         logger.debug("Saving state.")
-        video_toggled = self.switch_video.get_active()
-        video_source = self.combobox_video.get_active()
 
-        if self.sound:
-            audio_toggled = self.switch_audio.get_active()
-            audio2_toggled = self.switch_audio2.get_active()
-            audio_source = self.combobox_audio.get_active()
-            audio2_source = self.combobox_audio2.get_active()
-            self.config.set("main", "audio_source", audio_source)
-            self.config.set("main", "audio2_source", audio2_source)
-            self.config.set("main", "audio_toggled", audio_toggled)
-            self.config.set("main", "audio2_toggled", audio2_toggled)
+        self.config.set("main", "capture_cursor", prefs.capture_cursor)
+        self.config.set("main", "capture_speakers", prefs.capture_speakers)
+        self.config.set("main", "capture_microphone", prefs.capture_microphone)
 
-        self.config.set("main", "video_source", video_source)
-        self.config.set("main", "video_toggled", video_toggled)
-
-        self.config.set("main", "capture_cursor", self.capture_cursor)
-        self.config.set("main", "timer_window", self.timer_window)
+        self.config.set("main", "capture_cursor_pic", prefs.capture_cursor_pic)
 
         self.config.set("main", "last_x", self.main_x)
         self.config.set("main", "last_y", self.main_y)
 
+        if prefs.sound:
+            logger.debug("Saving Audio source state: {0} {1}".format(
+                                                                     prefs.audio_source,
+                                                                     prefs.audio2_source))
 
-        codec = self.combobox_codec.get_active()
-        self.config.set("main", "codec", codec)
+            self.config.set("main", "audio_source", prefs.audio_source)
+            self.config.set("main", "audio2_source", prefs.audio2_source)
 
-        counter = int(self.spinbutton_counter.get_value())
-        self.config.set("main", "counter", counter)
-
-        framerate = int(self.spinbutton_framerate.get_value())
-        self.config.set("main", "framerate", framerate)
+        self.config.set("main", "countdown_splash", prefs.countdown_splash)
+        self.config.set("main", "counter", prefs.countdown_timer)
+        self.config.set("main", "codec", prefs.codec)
+        self.config.set("main", "framerate", prefs.framerate)
+        self.config.set("main", "autosave_video", prefs.autosave_video)
+        self.config.set("main", "autosave_video_file", prefs.autosave_video_file)
+        self.config.set("main", "autosave_picture", prefs.autosave_picture)
+        self.config.set("main", "autosave_picture_file", prefs.autosave_picture_file)
+        self.config.set("main", "shutter_sound", prefs.shutter_sound)
+        self.config.set("main", "shutter_type", prefs.shutter_type)
 
         self.config.write()
-
-    def get_sources(self, audio = True):
-        if audio:
-            logger.debug("Getting Audio sources.")
-            try:
-                self.audio_sources = self.pa_q.get_audio_sources()
-                if self.debug:
-                    for src in self.audio_sources:
-                        logger.debug(" Device found: ")
-                        for item in src:
-                            logger.debug("  - {0}".format(item))
-            except:
-                # Something went wrong, just fallback to no-sound
-                logger.warning("Unable to find any audio devices.")
-                self.audio_sources = [[0, _("Unknown"), _("Unknown")]]
-
-        try:
-            logger.debug("Getting Video sources.")
-            self.video_sources = []
-            self.default_screen = Gdk.Screen.get_default()
-            logger.debug("Found {0} monitors.".format(self.default_screen.get_n_monitors()))
-            for i in range(self.default_screen.get_n_monitors()):
-                rect = self.default_screen.get_monitor_geometry(i)
-                logger.debug("  Monitor {0} - X: {1}, Y: {2}, W: {3}, H: {4}".format(i,
-                                                                                       rect.x,
-                                                                                       rect.y,
-                                                                                       rect.width,
-                                                                                       rect.height))
-                self.video_sources.append({"x": rect.x,
-                                           "y": rect.y,
-                                           "width": rect.width,
-                                           "height": rect.height})
-            #
-            # Appen combined display too
-            #
-            if self.default_screen.get_n_monitors() > 1:
-                self.video_sources.append({"x": 0,
-                                           "y": 0,
-                                           "width": self.default_screen.get_width(),
-                                           "height": self.default_screen.get_height()})
-        except:
-            logger.warning("Unable to find any video sources.")
-            self.video_sources = [_("Unknown")]
-
-    #
-    # TODO: Merge with get_sources?
-    #
-    def populate_widgets(self, audio = True):
-
-        if audio:
-            for source in self.audio_sources:
-                self.combobox_audio.append(None, source[2])
-                self.combobox_audio2.append(None, source[2])
-
-        self.combobox_video.remove_all()
-
-        i = 1
-        for s in self.video_sources:
-            if i == len(self.video_sources) and len(self.video_sources) > 1:
-                dsp_name = _("Combined ({w}x{h})".format(w = s['width'], h = s['height']))
-            else:
-                dsp_name = _("Display {n} ({w}x{h})".format(n = i, w = s['width'], h = s['height']))
-
-            self.combobox_video.append(None, dsp_name)
-            i += 1
-
-        self.combobox_codec.append(None, "Gstreamer - VP8/WebM")
-        self.combobox_codec.append(None, "GStreamer - H264/MP4")
