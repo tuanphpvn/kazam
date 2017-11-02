@@ -21,52 +21,71 @@
 #       MA 02110-1301, USA.
 
 import logging
+logger = logging.getLogger("Indicator")
 
 from gettext import gettext as _
 from gi.repository import Gtk, GObject
 
+from kazam.backend.constants import *
+
 class KazamSuperIndicator(GObject.GObject):
 
     __gsignals__ = {
-        "pause-request" : (GObject.SIGNAL_RUN_LAST,
+        "indicator-pause-request" : (GObject.SIGNAL_RUN_LAST,
                                    None,
                                    (),
                                   ),
-        "unpause-request" : (GObject.SIGNAL_RUN_LAST,
+        "indicator-unpause-request" : (GObject.SIGNAL_RUN_LAST,
                                    None,
                                    (),
                                   ),
-        "quit-request" : (GObject.SIGNAL_RUN_LAST,
+        "indicator-quit-request" : (GObject.SIGNAL_RUN_LAST,
                                   None,
                                    (),
                                   ),
-        "show-request" : (GObject.SIGNAL_RUN_LAST,
+        "indicator-show-request" : (GObject.SIGNAL_RUN_LAST,
                                   None,
                                    (),
                                   ),
-        "stop-request" : (GObject.SIGNAL_RUN_LAST,
+        "indicator-stop-request" : (GObject.SIGNAL_RUN_LAST,
                                   None,
                                    (),
                                   ),
+        "indicator-start-request" : (GObject.SIGNAL_RUN_LAST,
+                          None,
+                          (),
+            ),
     }
 
     def __init__(self):
         super(KazamSuperIndicator, self).__init__()
-
+        self.blink_icon = BLINK_STOP_ICON
+        self.blink_state = False
+        self.blink_mode = BLINK_SLOW
         self.menu = Gtk.Menu()
+
+        self.menuitem_start = Gtk.MenuItem(_("Start recording"))
+        self.menuitem_start.set_sensitive(True)
+        self.menuitem_start.connect("activate", self.on_menuitem_start_activate)
 
         self.menuitem_pause = Gtk.CheckMenuItem(_("Pause recording"))
         self.menuitem_pause.set_sensitive(False)
         self.menuitem_pause.connect("activate", self.on_menuitem_pause_activate)
+
         self.menuitem_finish = Gtk.MenuItem(_("Finish recording"))
         self.menuitem_finish.set_sensitive(False)
         self.menuitem_finish.connect("activate", self.on_menuitem_finish_activate)
+
         self.menuitem_separator = Gtk.SeparatorMenuItem()
         self.menuitem_separator2 = Gtk.SeparatorMenuItem()
+
         self.menuitem_show = Gtk.MenuItem(_("Record setup"))
         self.menuitem_show.connect("activate", self.on_menuitem_show_activate)
+
         self.menuitem_quit = Gtk.MenuItem(_("Quit"))
         self.menuitem_quit.connect("activate", self.on_menuitem_quit_activate)
+
+        self.menu.append(self.menuitem_start)
         self.menu.append(self.menuitem_pause)
         self.menu.append(self.menuitem_finish)
         self.menu.append(self.menuitem_separator)
@@ -77,29 +96,27 @@ class KazamSuperIndicator(GObject.GObject):
 
     def on_menuitem_pause_activate(self, menuitem):
         if self.menuitem_pause.get_active():
-            self.emit("pause-request")
+            self.emit("indicator-pause-request")
         else:
-            self.emit("unpause-request")
+            self.emit("indicator-unpause-request")
+
+    def on_menuitem_start_activate(self, menuitem):
+        self.emit("indicator-start-request")
 
     def on_menuitem_finish_activate(self, menuitem):
+        self.menuitem_start.set_sensitive(True)
         self.menuitem_pause.set_sensitive(False)
+        self.menuitem_pause.set_active(False)
         self.menuitem_finish.set_sensitive(False)
         self.menuitem_show.set_sensitive(True)
-        self.menuitem_pause.set_active(False)
         self.menuitem_quit.set_sensitive(True)
-        self.emit("stop-request")
+        self.emit("indicator-stop-request")
 
     def on_menuitem_quit_activate(self, menuitem):
-        self.emit("quit-request")
+        self.emit("indicator-quit-request")
 
     def on_menuitem_show_activate(self, menuitem):
-        self.emit("show-request")
-
-    def start_recording(self):
-        self.menuitem_pause.set_sensitive(True)
-        self.menuitem_finish.set_sensitive(True)
-        self.menuitem_show.set_sensitive(False)
-        self.menuitem_quit.set_sensitive(False)
+        self.emit("indicator-show-request")
 
 try:
     from gi.repository import AppIndicator3
@@ -120,19 +137,46 @@ try:
         def on_menuitem_pause_activate(self, menuitem):
             if menuitem.get_active():
                 self.indicator.set_attention_icon("kazam-paused")
-                logging.info("Recording paused")
+                logger.info("Recording paused.")
             else:
                 self.indicator.set_attention_icon("kazam-recording")
-                logging.info("Recording started again")
+                logger.info("Recording resumed.")
             KazamSuperIndicator.on_menuitem_pause_activate(self, menuitem)
 
         def on_menuitem_finish_activate(self, menuitem):
+            logger.info("Recording stopped.")
             self.indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
             KazamSuperIndicator.on_menuitem_finish_activate(self, menuitem)
 
+        def blink_set_state(self, state):
+            if state == BLINK_STOP:
+                self.blink_state = BLINK_STOP
+                self.indicator.set_icon("kazam-stopped")
+            elif state == BLINK_START:
+                self.blink_state = BLINK_SLOW
+                GObject.timeout_add(500, self.blink)
+            elif state == BLINK_SLOW:
+                self.blink_state = BLINK_SLOW
+            elif state == BLINK_FAST:
+                self.blink_state = BLINK_FAST
+
+        def blink(self):
+            if self.blink_state != BLINK_STOP:
+                if self.blink_icon == BLINK_READY_ICON:
+                    self.indicator.set_icon("kazam-stopped")
+                    self.blink_icon = BLINK_STOP_ICON
+                else:
+                    self.indicator.set_icon("kazam-countdown")
+                    self.blink_icon = BLINK_READY_ICON
+
+                if self.blink_state == BLINK_SLOW:
+                    GObject.timeout_add(500, self.blink)
+                elif self.blink_state == BLINK_FAST:
+                    GObject.timeout_add(200, self.blink)
+
         def start_recording(self):
+            logger.info("Recording started.")
             self.indicator.set_status(AppIndicator3.IndicatorStatus.ATTENTION)
-            KazamSuperIndicator.start_recording(self)
 
 except ImportError:
     #
@@ -160,19 +204,46 @@ except ImportError:
             self.menu.popup(None, None, position, self.indicator, button, time)
 
         def on_menuitem_finish_activate(self, menuitem):
+            logger.info("Recording stopped.")
             self.indicator.set_from_icon_name("kazam-stopped")
             KazamSuperIndicator.on_menuitem_finish_activate(self, menuitem)
 
         def on_menuitem_pause_activate(self, menuitem):
             if menuitem.get_active():
                 self.indicator.set_from_icon_name("kazam-paused")
-                logging.info("Recording paused")
+                logger.info("Recording paused.")
             else:
                 self.indicator.set_from_icon_name("kazam-recording")
-                logging.info("Recording started again")
+                logger.info("Recording resumed.")
             KazamSuperIndicator.on_menuitem_pause_activate(self, menuitem)
 
+        def blink_set_state(self, state):
+            if state == BLINK_STOP:
+                self.blink_state = BLINK_STOP
+                self.indicator.set_from_icon_name("kazam-stopped")
+            elif state == BLINK_START:
+                self.blink_state = BLINK_SLOW
+                GObject.timeout_add(500, self.blink)
+            elif state == BLINK_SLOW:
+                self.blink_state = BLINK_SLOW
+            elif state == BLINK_FAST:
+                self.blink_state = BLINK_FAST
+
+        def blink(self):
+            if self.blink_state != BLINK_STOP:
+                if self.blink_icon == BLINK_READY_ICON:
+                    self.indicator.set_from_icon_name("kazam-stopped")
+                    self.blink_icon = BLINK_STOP_ICON
+                else:
+                    self.indicator.set_from_icon_name("kazam-countdown")
+                    self.blink_icon = BLINK_READY_ICON
+
+                if self.blink_state == BLINK_SLOW:
+                    GObject.timeout_add(500, self.blink)
+                elif self.blink_state == BLINK_FAST:
+                    GObject.timeout_add(200, self.blink)
+
         def start_recording(self):
+            logger.info("Recording started.")
             self.indicator.set_from_icon_name("kazam-recording")
-            KazamSuperIndicator.start_recording(self)
 

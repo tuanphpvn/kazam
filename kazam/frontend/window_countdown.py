@@ -23,20 +23,25 @@
 import cairo
 
 from gettext import gettext as _
-
 from gi.repository import Gtk, GObject
+from kazam.backend.constants import *
 
 class CountdownWindow(GObject.GObject):
 
     __gsignals__ = {
-        "start-request" : (GObject.SIGNAL_RUN_LAST,
+        "counter-finished" : (GObject.SIGNAL_RUN_LAST,
                                    None,
                                    (),
                                   ),
     }
 
-    def __init__(self, number = 5):
+    def __init__(self, indicator, number = 5, show_window = True):
         super(CountdownWindow, self).__init__()
+        self.indicator = indicator
+        self.number = number
+        self.canceled = False
+        self.show_window = show_window
+
         self.window = Gtk.Window()
         self.window.connect("delete-event", Gtk.main_quit)
         self.window.connect("draw", self.cb_draw)
@@ -48,7 +53,6 @@ class CountdownWindow(GObject.GObject):
         self.window.set_app_paintable(True)
         self.window.set_has_resize_grip(False)
         self.window.set_resizable(True)
-        self.number = number
 
         self.window.set_decorated(False)
         self.window.set_property("skip-taskbar-hint", True)
@@ -61,21 +65,34 @@ class CountdownWindow(GObject.GObject):
 
 
     def run(self, counter):
-        self.number = counter + 1
-        self.window.show_all()
+        if counter > 0:
+            self.number = counter + 1
+            if self.show_window:
+                self.window.show_all()
+        else:
+            self.number = 0
         self.countdown()
 
     def countdown(self):
-        if self.number > 1:
-            self.window.queue_draw()
-            GObject.timeout_add(1000, self.countdown)
-            self.number -= 1
-        else:
-            self.window.destroy()
-            GObject.timeout_add(400, self.start_request)
+        if not self.canceled:
+            if self.number < 5:
+                self.indicator.blink_set_state(BLINK_FAST)
+            if self.number > 1:
+                self.window.queue_draw()
+                GObject.timeout_add(1000, self.countdown)
+                self.number -= 1
+            else:
+                self.window.destroy()
+                GObject.timeout_add(400, self.counter_finished)
 
-    def start_request(self):
-        self.emit("start-request")
+    def cancel_countdown(self):
+        self.indicator.blink_set_state(BLINK_STOP)
+        self.canceled = True
+        self.window.destroy()
+        self.number = 0
+
+    def counter_finished(self):
+        self.emit("counter-finished")
         return False
 
     def cb_draw(self, widget, cr):

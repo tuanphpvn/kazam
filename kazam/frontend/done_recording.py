@@ -22,6 +22,9 @@
 
 import os
 import shutil
+import logging
+logger = logging.getLogger("Done Recording")
+
 from gettext import gettext as _
 from gi.repository import Gtk, GObject
 
@@ -45,12 +48,12 @@ class DoneRecording(Gtk.Window):
 
     def __init__(self, icons, tempfile, codec, old_path):
         Gtk.Window.__init__(self, title=_("Kazam Screencaster - Recording finished"))
-
         self.icons = icons
         self.tempfile = tempfile
         self.codec = codec
         self.action = ACTION_SAVE
         self.old_path = old_path
+        self.set_position(Gtk.WindowPosition.NONE)
 
         # Setup UI
         self.set_border_width(10)
@@ -58,7 +61,6 @@ class DoneRecording(Gtk.Window):
         self.label_box = Gtk.Box()
         self.done_label = Gtk.Label(_("Kazam finished recording.\nWhat do you want to do now?"))
         self.label_box.add(self.done_label)
-
         self.grid = Gtk.Grid(row_spacing = 10, column_spacing = 5)
         self.radiobutton_edit = Gtk.RadioButton.new_with_label_from_widget(None, _("Edit with:"))
         self.combobox_editor = EditComboBox(self.icons)
@@ -78,7 +80,6 @@ class DoneRecording(Gtk.Window):
 
         self.radiobutton_save.connect("toggled", self.cb_radiobutton_save_toggled)
         self.radiobutton_edit.connect("toggled", self.cb_radiobutton_edit_toggled)
-
         self.btn_cancel = Gtk.Button(label = _("Cancel"))
         self.btn_cancel.set_size_request(100, -1)
         self.btn_continue = Gtk.Button(label = _("Continue"))
@@ -102,17 +103,20 @@ class DoneRecording(Gtk.Window):
         self.vbox.pack_start(self.radiobutton_save, True, True, 0)
         self.vbox.pack_start(self.hbox, True, True, 0)
         self.add(self.vbox)
-
         self.connect("delete-event", self.cb_delete_event)
         self.show_all()
         self.present()
 
+
     def cb_continue_clicked(self, widget):
         if self.action == ACTION_EDIT:
+            logger.debug("Continue - Edit.")
             (command, args)  = self.combobox_editor.get_active_value()
             self.emit("edit-request", (command, args))
             self.destroy()
         else:
+            self.set_sensitive(False)
+            logger.debug("Continue - Save ({0}).".format(self.codec))
             (dialog, result, self.old_path) = SaveDialog(_("Save screencast"),
                                           self.old_path, self.codec)
 
@@ -122,14 +126,14 @@ class DoneRecording(Gtk.Window):
                     if not uri.endswith(".webm"):
                         uri += ".webm"
                 else:
-                    if not uri.endswith(".mkv"):
-                        uri += ".mkv"
-
+                    if not uri.endswith(".mp4"):
+                        uri += ".mp4"
                 shutil.move(self.tempfile, uri)
                 dialog.destroy()
                 self.emit("save-done", self.old_path)
                 self.destroy()
             else:
+                self.set_sensitive(True)
                 dialog.destroy()
 
 
@@ -137,7 +141,7 @@ class DoneRecording(Gtk.Window):
         self.emit("save-cancel")
         self.destroy()
 
-    def cb_delete_event(self, widget):
+    def cb_delete_event(self, widget, data):
         self.emit("save-cancel")
         return True
 

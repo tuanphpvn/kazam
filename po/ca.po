@@ -1,4 +1,4 @@
-# Polish translation for kazam
+# Catalan translation for kazam
 # Copyright (c) 2010 Rosetta Contributors and Canonical Ltd 2010
 # This file is distributed under the same license as the kazam package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2010.
@@ -8,9 +8,9 @@ msgstr ""
 "Project-Id-Version: kazam\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2010-10-08 14:12+0100\n"
-"PO-Revision-Date: 2010-10-09 10:23+0000\n"
-"Last-Translator: mmiicc <mpredotka@gmail.com>\n"
-"Language-Team: Polish <pl@li.org>\n"
+"PO-Revision-Date: 2010-10-14 19:37+0000\n"
+"Last-Translator: Joan Duran <jodufi@gmail.com>\n"
+"Language-Team: Catalan <ca@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -23,231 +23,231 @@ msgstr " "
 
 #: ../data/ui/authenticate.ui.h:2 ../data/ui/done-recording.ui.h:2
 msgid "Cancel"
-msgstr "Anuluj"
+msgstr "Cancel·la"
 
 #: ../data/ui/authenticate.ui.h:3 ../data/ui/done-recording.ui.h:3
 msgid "Continue"
-msgstr "Kontynuuj"
+msgstr "Continuar"
 
 #: ../data/ui/authenticate.ui.h:4
 msgid "Email address:"
-msgstr "Adres email:"
+msgstr "Adreça de correu-e:"
 
 #: ../data/ui/authenticate.ui.h:5
 msgid "I want to register an account now"
-msgstr "Chcę utworzyć nowe konto"
+msgstr "Vull registrar un compte ara"
 
 #: ../data/ui/authenticate.ui.h:6
 msgid "Password:"
-msgstr "Hasło:"
+msgstr ""
 
 #: ../data/ui/done-recording.ui.h:1 ../data/ui/start.ui.h:1
 msgid "About"
-msgstr "O programie"
+msgstr "Quant a"
 
 #: ../data/ui/done-recording.ui.h:4
 msgid "Edit with:"
-msgstr "Edytuj w:"
+msgstr "Edita amb:"
 
 #: ../data/ui/done-recording.ui.h:5 ../data/ui/export.ui.h:7
 #: ../data/ui/start.ui.h:3 ../data/kazam.desktop.in.h:1
 #: ../kazam/frontend/widgets/comboboxes.py:106
 #: ../kazam/frontend/widgets/dialogs.py:46
 msgid "Kazam Screencaster"
-msgstr "Kazam Screencaster"
+msgstr "Creador de sessions de vídeo Kazam"
 
 #: ../data/ui/done-recording.ui.h:6 ../data/ui/start.ui.h:4
 #: ../kazam/frontend/indicator.py:65
 msgid "Quit"
-msgstr "Zakończ"
+msgstr "Surt"
 
 #: ../data/ui/done-recording.ui.h:7
 msgid "Save for later use..."
-msgstr "Zachowaj na później..."
+msgstr "Desa per utilitzar-ho més tard..."
 
 #: ../data/ui/done-recording.ui.h:8
 msgid ""
 "Your screencast has finished recording.\n"
 "What do you want to do now?"
 msgstr ""
-"Zakończono nagrywanie screencasta.\n"
-"Co chcesz teraz zrobić?"
+"L'enregistrament de la sessió de vídeo ha finalitzat.\n"
+"Què voleu fer ara?"
 
 #: ../data/ui/done-recording.ui.h:10 ../data/ui/export.ui.h:10
 #: ../data/ui/start.ui.h:8
 msgid "_File"
-msgstr "_Plik"
+msgstr "_Fitxer"
 
 #: ../data/ui/done-recording.ui.h:11 ../data/ui/export.ui.h:11
 #: ../data/ui/start.ui.h:9
 msgid "_Help"
-msgstr "Pomo_c"
+msgstr "A_juda"
 
 #: ../data/ui/export.ui.h:1
 msgid "<b>Export to:</b>"
-msgstr "<b>Eksportuj do:</b>"
+msgstr "<b>Exporta a:</b>"
 
 #: ../data/ui/export.ui.h:2
 msgid "Audio"
-msgstr "Dźwięk"
+msgstr "So"
 
 #: ../data/ui/export.ui.h:3
 msgid "Back"
-msgstr "Wstecz"
+msgstr "Endarrere"
 
 #: ../data/ui/export.ui.h:4 ../data/ui/start.ui.h:2
 msgid "Close"
-msgstr "Zamknij"
+msgstr "Tanca"
 
 #: ../data/ui/export.ui.h:5
 msgid "Crop"
-msgstr "Przytnij"
+msgstr "Escapça"
 
 #: ../data/ui/export.ui.h:6
 msgid "Export"
-msgstr "Eksportuj"
+msgstr "Exporta"
 
 #: ../data/ui/export.ui.h:8
 msgid "Quality:"
-msgstr "Jakość:"
+msgstr "Qualitat:"
 
 #: ../data/ui/export.ui.h:9
 msgid "Video"
-msgstr "Obraz"
+msgstr "Vídeo"
 
 #: ../data/ui/start.ui.h:5
 msgid "Record"
-msgstr "Nagrywaj"
+msgstr "Enregistra"
 
 #: ../data/ui/start.ui.h:6
 msgid "Record Audio from:"
-msgstr "Nagraj dźwięk z:"
+msgstr "Enregistra el so des de:"
 
 #: ../data/ui/start.ui.h:7
 msgid "Record Video from:"
-msgstr "Nagraj obraz z:"
+msgstr "Enregistra el vídeo des de:"
 
 #: ../data/ui/export_sources/youtube.ui.h:1
 msgid "Category"
-msgstr "Kategoria"
+msgstr "Categoria"
 
 #: ../data/ui/export_sources/youtube.ui.h:2
 msgid "Description"
-msgstr "Opis"
+msgstr "Descripció"
 
 #: ../data/ui/export_sources/youtube.ui.h:3
 msgid "Keywords"
-msgstr "Słowa kluczowe"
+msgstr "Paraules clau"
 
 #: ../data/ui/export_sources/youtube.ui.h:4
 msgid "Private"
-msgstr "Prywatny"
+msgstr "Privat"
 
 #: ../data/ui/export_sources/youtube.ui.h:5
 msgid "Title"
-msgstr "Tytuł"
+msgstr "Títol"
 
 #: ../data/kazam.desktop.in.h:2
 msgid "Record a video of activity on your screen"
-msgstr "Nagraj obraz z aktywności na ekranie"
+msgstr "Enregistra un vídeo de l'activitat de la pantalla"
 
 #: ../data/kazam.desktop.in.h:3
 msgid "Screencaster"
-msgstr "Screencaster"
+msgstr "Creador de sessions de vídeo"
 
 #. Open the save dialog
 #: ../kazam/app.py:149
 msgid "Save screencast"
-msgstr "Zapisz screencast"
+msgstr "Desa la sessió de vídeo"
 
 #: ../kazam/frontend/export.py:201
 msgid "Logging in..."
-msgstr "Logowanie..."
+msgstr "S'està entrant..."
 
 #: ../kazam/frontend/export.py:207
 msgid "Log-in completed."
-msgstr "Logowanie zakończone."
+msgstr "L'entrada ha finalitzat."
 
 #: ../kazam/frontend/export.py:209
 msgid "There was an error logging in."
-msgstr "Wystąpił błąd logowania."
+msgstr "S'ha produït un error en entrar."
 
 #: ../kazam/frontend/export.py:214
 msgid "Converting screencast..."
-msgstr "Konwertowanie screencastu..."
+msgstr "S'està convertint la sessió de vídeo..."
 
 #: ../kazam/frontend/export.py:218
 msgid "Screencast converted."
-msgstr "Screencast skonwertowany."
+msgstr "S'ha convertint la sessió de vídeo."
 
 #: ../kazam/frontend/export.py:220
 msgid "There was an error converting."
-msgstr "Wystąpił błąd podczas konwersji."
+msgstr "S'ha produït un error durant la conversió."
 
 #: ../kazam/frontend/export.py:225
 msgid "Uploading screencast..."
-msgstr "Wysyłanie screencastu..."
+msgstr "S'està pujant la sessió de vídeo..."
 
 #: ../kazam/frontend/export.py:229
 msgid "Screencast uploaded."
-msgstr "Screencast wysłany."
+msgstr "S'ha pujat la sessió de vídeo."
 
 #. Show a dialog with the url of the uploaded file
 #: ../kazam/frontend/export.py:233
 msgid "Your screencast has uploaded successfully."
-msgstr "Screencast wysłany pomyślnie."
+msgstr "La sessió de vídeo s'ha pujat correctament."
 
 #: ../kazam/frontend/export.py:234
 msgid "It is available at the location below:"
-msgstr "Dostępne w położeniu poniżej:"
+msgstr "Està disponible a la ubicació de sota:"
 
 #: ../kazam/frontend/export.py:236
 msgid "There was an error uploading."
-msgstr "Wystąpił błąd podczas wysyłania."
+msgstr "S'ha produït un error durant en pujar."
 
 #: ../kazam/frontend/indicator.py:58
 msgid "Pause recording"
-msgstr "Wstrzymaj nagrywanie"
+msgstr "Fes una pausa a l'enregistrament"
 
 #: ../kazam/frontend/indicator.py:61
 msgid "Finish recording..."
-msgstr "Zakończ nagranie..."
+msgstr "Finalitza l'enregistrament..."
 
 #: ../kazam/frontend/window_countdown.py:98
 msgid "Recording will start in..."
-msgstr "Nagrywanie zacznie się za..."
+msgstr "L'enregistrament començarà en..."
 
 #: ../kazam/frontend/widgets/comboboxes.py:199
 msgid "Screen"
-msgstr "Ekran"
+msgstr "Pantalla"
 
 #: ../kazam/frontend/widgets/comboboxes.py:205
 msgid "All Screens"
-msgstr "Wszystkie ekrany"
+msgstr "Totes les pantalles"
 
 #: ../kazam/frontend/widgets/comboboxes.py:207
 #, python-format
 msgid "Screen %s"
-msgstr "Ekran %s"
+msgstr "Pantalla %s"
 
 #: ../kazam/frontend/widgets/comboboxes.py:218
 msgid "Computer"
-msgstr "Komputer"
+msgstr "Ordinador"
 
 #: ../kazam/frontend/widgets/dialogs.py:47
 msgid "Record a video of activity on your screen."
-msgstr ""
+msgstr "Enregistra un vídeo de l'activitat a la pantalla."
 
 #: ../kazam/frontend/widgets/dialogs.py:65
 msgid "Untitled Screencast"
-msgstr "Screencast bez nazwy"
+msgstr "Sessió de vídeo sense títol"
 
 #: ../kazam/frontend/widgets/dialogs.py:150
 #, python-format
 msgid "To upload a screencast to %s, you need a %s account."
-msgstr "Aby wysłać screencast do %s, potrzebujesz konta %s."
+msgstr "Per pujar una sessió de vídeo %s us cal un compte de %s."
 
 #: ../kazam/frontend/widgets/dialogs.py:154
 #, python-format
 msgid "I have a %s account:"
-msgstr "Mam konto %s:"
+msgstr "Ja tinc un compte de %s:"

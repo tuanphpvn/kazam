@@ -22,6 +22,8 @@
 
 import cairo
 import logging
+logger = logging.getLogger("Window Region")
+
 from gettext import gettext as _
 
 from gi.repository import Gtk, GObject, Gdk
@@ -41,7 +43,7 @@ class RegionWindow(GObject.GObject):
 
     def __init__(self, region = None):
         super(RegionWindow, self).__init__()
-        logging.debug("Initializing region window.")
+        logger.debug("Initializing region window.")
         self.window = Gtk.Window()
         self.window.connect("configure-event", self.cb_configure_event)
         self.window.connect("delete-event", Gtk.main_quit)
@@ -50,7 +52,7 @@ class RegionWindow(GObject.GObject):
         self.window.connect("button-press-event", self.cb_button_press_event)
 
         if region:
-            logging.debug("Old region defined at: X: {0}, Y: {1}, W: {2}, H: {3}".format(region[0],
+            logger.debug("Old region defined at: X: {0}, Y: {1}, W: {2}, H: {3}".format(region[0],
                                                                                           region[1],
                                                                                           region[2],
                                                                                           region[3]))
@@ -82,27 +84,50 @@ class RegionWindow(GObject.GObject):
         self.visual = self.screen.get_rgba_visual()
         self.recording = False
 
-        self.window.set_visual(self.visual)
         if self.visual is not None and self.screen.is_composited():
-            self.window.show_all()
+            logger.debug("Compositing window manager detected.")
+            self.window.set_visual(self.visual)
+            self.compositing = True
+        else:
+            self.compositing = False
+
+        self.window.show_all()
+
 
     def cb_button_press_event(self, widget, event):
         (op, button) = event.get_button()
         if button == 1:
-            if int(event.x) in range(0, 15) and int(event.y) in range(0,15):
+            # TODO: Lure someone into making this code a little less ugly ...
+            if int(event.x) in range(0, 16) and int(event.y) in range(0,16):
                 self.window.begin_resize_drag(Gdk.WindowEdge.NORTH_WEST, button,
                                               event.x_root, event.y_root, event.time)
 
-            elif int(event.x) in range(self.width-15, self.width) and int(event.y) in range(0,15):
+            elif int(event.x) in range(self.width-16, self.width) and int(event.y) in range(0,16):
                 self.window.begin_resize_drag(Gdk.WindowEdge.NORTH_EAST, button,
                                               event.x_root, event.y_root, event.time)
 
-            elif int(event.x) in range(self.width-15, self.width) and int(event.y) in range(self.height-15,self.height):
+            elif int(event.x) in range(self.width-16, self.width) and int(event.y) in range(self.height-16,self.height):
                 self.window.begin_resize_drag(Gdk.WindowEdge.SOUTH_EAST, button,
                                               event.x_root, event.y_root, event.time)
 
-            elif int(event.x) in range(0, 15) and int(event.y) in range(self.height-15, self.height):
+            elif int(event.x) in range(0, 16) and int(event.y) in range(self.height-16, self.height):
                 self.window.begin_resize_drag(Gdk.WindowEdge.SOUTH_WEST, button,
+                                              event.x_root, event.y_root, event.time)
+
+            elif int(event.x) in range(self.width/2-8, self.width/2+8) and int(event.y) in range(0,16):
+                self.window.begin_resize_drag(Gdk.WindowEdge.NORTH, button,
+                                              event.x_root, event.y_root, event.time)
+
+            elif int(event.x) in range(self.width/2-8, self.width/2+8) and int(event.y) in range(self.height-16, self.height):
+                self.window.begin_resize_drag(Gdk.WindowEdge.SOUTH, button,
+                                              event.x_root, event.y_root, event.time)
+
+            elif int(event.x) in range(0, 16) and int(event.y) in range(self.height/2-8,self.height/2+8):
+                self.window.begin_resize_drag(Gdk.WindowEdge.WEST, button,
+                                              event.x_root, event.y_root, event.time)
+
+            elif int(event.x) in range(self.width-16, self.width) and int(event.y) in range(self.height/2-8,self.height/2+8):
+                self.window.begin_resize_drag(Gdk.WindowEdge.EAST, button,
                                               event.x_root, event.y_root, event.time)
 
             else:
@@ -159,16 +184,29 @@ class RegionWindow(GObject.GObject):
         #    cr.stroke()
         #    cr.set_operator(cairo.OPERATOR_OVER)
         #else:
-        cr.set_source_rgba(0.0, 0.0, 0.0, 0.4)
+        if self.compositing:
+            cr.set_source_rgba(0.0, 0.0, 0.0, 0.4)
+        else:
+            cr.set_source_rgb(0.5, 0.5, 0.5)
+
         cr.set_operator(cairo.OPERATOR_SOURCE)
         cr.paint()
-        cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
+        if self.compositing:
+            cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
+        else:
+            cr.set_source_rgba(1.0, 1.0, 1.0)
         cr.set_line_width(1.0)
         cr.move_to(0, 0)
-        cr.rectangle(0, 0, 15, 15)
-        cr.rectangle(w-15, 0, w, 15)
-        cr.rectangle(0, h-15, 15, h)
-        cr.rectangle(w-15, h-15, w, h)
+        cr.rectangle(0, 0, 16, 16)
+        cr.rectangle(w-16, 0, 16, 16)
+        cr.rectangle(0, h-16, 16, 16)
+        cr.rectangle(w-16, h-16, 16, 16)
+        cr.rectangle(w/2-8, 0, 16, 16)
+        cr.rectangle(w/2-8, h-16, 16, 16)
+
+        cr.rectangle(0, h/2-8, 16, 16)
+        cr.rectangle(w-16, h/2-8, 16, 16)
+
         cr.fill()
         cr.set_source_rgb(0.0, 0.0, 0.0)
         cr.rectangle(0, 0, w, h)
@@ -189,10 +227,17 @@ class RegionWindow(GObject.GObject):
         cr.set_line_width(2.0)
         cx = w/2 - te[2]/2
         cy = h/2 - te[3]/2
-        cr.set_source_rgba(0.4, 0.4, 0.4, 1.0)
+        if self.compositing:
+            cr.set_source_rgba(0.4, 0.4, 0.4, 1.0)
+        else:
+            cr.set_source_rgb(0.4, 0.4, 0.4)
+
         cr.move_to(cx, cy)
         cr.text_path(text)
         cr.stroke()
-        cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
+        if self.compositing:
+            cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
+        else:
+            cr.set_source_rgb(1.0, 1.0, 1.0)
         cr.move_to(cx, cy)
         cr.show_text(text)

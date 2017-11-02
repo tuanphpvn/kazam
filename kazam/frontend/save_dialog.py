@@ -21,6 +21,9 @@
 #       MA 02110-1301, USA.
 
 import os
+import logging
+logger = logging.getLogger("Save Dialog")
+
 from gi.repository import Gtk
 from gettext import gettext as _
 from xdg.BaseDirectory import xdg_config_home
@@ -28,6 +31,7 @@ from xdg.BaseDirectory import xdg_config_home
 from kazam.backend.constants import *
 
 def SaveDialog(title, old_path, codec):
+    logger.debug("Save dialog called.")
     dialog = Gtk.FileChooserDialog(title, None,
                                    Gtk.FileChooserAction.SAVE,
                                    (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -36,7 +40,7 @@ def SaveDialog(title, old_path, codec):
     if codec == CODEC_VP8:
         dialog.set_current_name("%s.webm" % _("Untitled_Screencast"))
     elif codec == CODEC_H264:
-        dialog.set_current_name("%s.mkv" % _("Untitled_Screencast"))
+        dialog.set_current_name("%s.mp4" % _("Untitled_Screencast"))
 
     dialog.set_do_overwrite_confirmation(True)
 
