@@ -8,61 +8,61 @@ msgstr ""
 "Project-Id-Version: kazam\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2013-01-04 09:42+0100\n"
-"PO-Revision-Date: 2012-09-05 00:13+0000\n"
-"Last-Translator: nofallyaqoo <Unknown>\n"
+"PO-Revision-Date: 2013-02-19 09:16+0000\n"
+"Last-Translator: Abdelmadjid Cherfaoui <Unknown>\n"
 "Language-Team: Arabic <ar@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2013-01-06 05:01+0000\n"
-"X-Generator: Launchpad (build 16393)\n"
+"X-Launchpad-Export-Date: 2014-04-29 06:26+0000\n"
+"X-Generator: Launchpad (build 16985)\n"
 
 #: ../data/ui/kazam.ui.h:1 ../data/kazam.desktop.in.h:1
 #: ../kazam/frontend/about_dialog.py:57
 msgid "Kazam"
-msgstr ""
+msgstr "كازام"
 
 #: ../data/ui/kazam.ui.h:2
 msgid "Capture"
-msgstr ""
+msgstr "تسجيل الشاشة"
 
 #: ../data/ui/kazam.ui.h:3
 msgid "Seconds to wait before capturing:"
-msgstr ""
+msgstr "ثواني الانتظار قبل التسجيل:"
 
 #: ../data/ui/kazam.ui.h:4
 msgid "Sound from microphone"
-msgstr ""
+msgstr "صوت اللاقط"
 
 #: ../data/ui/kazam.ui.h:5
 msgid "Sound from speakers"
-msgstr ""
+msgstr "صوت السماعات"
 
 #: ../data/ui/kazam.ui.h:6
 msgid "Mouse cursor"
-msgstr ""
+msgstr "مؤشر الفأرة"
 
 #: ../data/ui/kazam.ui.h:7 ../data/ui/preferences.ui.h:16 ../kazam/app.py:163
 #: ../kazam/frontend/save_dialog.py:43
 msgid "Screencast"
-msgstr ""
+msgstr "تسجيل الشاشة"
 
 #: ../data/ui/kazam.ui.h:8
 msgid "Window borders"
-msgstr ""
+msgstr "حدود النافذة"
 
 #: ../data/ui/kazam.ui.h:9 ../data/ui/preferences.ui.h:19 ../kazam/app.py:175
 #: ../kazam/frontend/save_dialog.py:45
 msgid "Screenshot"
-msgstr ""
+msgstr "التقاط الشاشة"
 
 #: ../data/ui/kazam.ui.h:10
 msgid "When capturing include:"
-msgstr ""
+msgstr "عند التصوير،أضف"
 
 #: ../data/ui/preferences.ui.h:1
 msgid "Kazam Preferences"
-msgstr ""
+msgstr "تفضيلات كازام"
 
 #: ../data/ui/preferences.ui.h:2
 msgid "Speakers:"
@@ -70,7 +70,7 @@ msgstr "السماعات:"
 
 #: ../data/ui/preferences.ui.h:3
 msgid "Set volume"
-msgstr "ضبط الصوت"
+msgstr "ضبط حجم الصوت"
 
 #: ../data/ui/preferences.ui.h:4
 msgid "Microphone:"
@@ -78,19 +78,19 @@ msgstr "لاقط الصوت:"
 
 #: ../data/ui/preferences.ui.h:5
 msgid "Countdown splash:"
-msgstr ""
+msgstr "شاشة بدء العد التنازلي:"
 
 #: ../data/ui/preferences.ui.h:6
 msgid "Toggle display of countdown splash"
-msgstr "بدل شاشة العرض للعد التنازلي"
+msgstr "بدل شاشة العد التنازلي"
 
 #: ../data/ui/preferences.ui.h:7
 msgid "General"
-msgstr ""
+msgstr "عامّ"
 
 #: ../data/ui/preferences.ui.h:8
 msgid "Framerate:"
-msgstr "معدّل الإطارات:"
+msgstr "معدَّل الإطارات:"
 
 #: ../data/ui/preferences.ui.h:9
 msgid "Set the number of frames per second"
@@ -98,63 +98,63 @@ msgstr "اضبط عدد الإطارات في الثانية"
 
 #: ../data/ui/preferences.ui.h:10
 msgid "Record with:"
-msgstr "سجلّ مع:"
+msgstr "سجّل باستخدام:"
 
 #: ../data/ui/preferences.ui.h:11
 msgid "Automatic file saving:"
-msgstr ""
+msgstr "حفظ تلقائي للملف:"
 
 #: ../data/ui/preferences.ui.h:12
 msgid "Directory:"
-msgstr ""
+msgstr "مجلد:"
 
 #: ../data/ui/preferences.ui.h:13
 msgid "Filename prefix:"
-msgstr ""
+msgstr "سابِقة اسم الملف:"
 
 #: ../data/ui/preferences.ui.h:14
 msgid "Select a directory"
-msgstr ""
+msgstr "اختر مجلد"
 
 #: ../data/ui/preferences.ui.h:15
 msgid "Kazam_screencast"
-msgstr ""
+msgstr "كازام_تسجيل الشاشة"
 
 #: ../data/ui/preferences.ui.h:17
 msgid "Shutter sound:"
-msgstr ""
+msgstr "صوت الغالق:"
 
 #: ../data/ui/preferences.ui.h:18
 msgid "Shutter type:"
-msgstr ""
+msgstr "نوع الغالق:"
 
 #: ../data/kazam.desktop.in.h:2
 msgid "Screencast and Screenshot tool"
-msgstr ""
+msgstr "أداة تسجيل والتقاط للشاشة"
 
 #: ../data/kazam.desktop.in.h:3
 msgid "Record a video or take a screenshot of your screen"
-msgstr ""
+msgstr "قم بتسجيل فيدو أو التقاط شاشتك"
 
 #: ../data/kazam.desktop.in.h:4
 msgid "screenshot;screencast;videorecord;desktop recording;"
-msgstr ""
+msgstr "تسجيل;شاشة;التقاط;تسجيل شاشة;التقاط شاشة;تسجيل سطح المكتب;"
 
 #: ../data/kazam.desktop.in.h:5
 msgid "Take a screenshot of entire workspace"
-msgstr ""
+msgstr "إلتقط صورة لكامل مساحة العمل"
 
 #: ../data/kazam.desktop.in.h:6
 msgid "Select an area to screenshot"
-msgstr ""
+msgstr "حدّد مساحة معينة لالتقاطها"
 
 #: ../data/kazam.desktop.in.h:7
 msgid "Select a window to screenshot"
-msgstr ""
+msgstr "اختر نافذة لالتقاطها"
 
 #: ../data/kazam.desktop.in.h:8 ../kazam/frontend/main_menu.py:65
 msgid "Preferences"
-msgstr ""
+msgstr "التفضيلات"
 
 #: ../kazam/app.py:57 ../kazam/app.py:66
 msgid "Gstreamer 1.0 or higher required, bailing out."
@@ -162,71 +162,71 @@ msgstr ""
 
 #: ../kazam/app.py:164
 msgid "Record a video of your desktop."
-msgstr ""
+msgstr "تسجيل فيديو لسطح مكتبك."
 
 #: ../kazam/app.py:176
 msgid "Record a picture of your desktop."
-msgstr ""
+msgstr "التقاط صورة لسطح المكتب."
 
 #: ../kazam/app.py:199
 msgid "Fullscreen"
-msgstr ""
+msgstr "ملء الشاشة"
 
 #: ../kazam/app.py:200
 msgid "Capture contents of the current screen."
-msgstr ""
+msgstr "التقاط محتويات الشاشة الحالية."
 
 #: ../kazam/app.py:211
 msgid "All Screens"
-msgstr ""
+msgstr "جميع الشاشات"
 
 #: ../kazam/app.py:212
 msgid "Capture contents of all of your screens."
-msgstr ""
+msgstr "التقاط محتويات جميع الشاشات."
 
 #: ../kazam/app.py:224
 msgid "Window"
-msgstr ""
+msgstr "نافذة"
 
 #: ../kazam/app.py:225
 msgid "Capture contents of a single window."
-msgstr ""
+msgstr "التقاط محتويات نافذة محددة."
 
 #: ../kazam/app.py:236
 msgid "Area"
-msgstr ""
+msgstr "المساحة"
 
 #: ../kazam/app.py:237
 msgid "Capture a pre-selected area of your screen."
-msgstr ""
+msgstr "التقط منطقة محددة مسبقا من على شاشتك."
 
 #: ../kazam/app.py:301 ../kazam/frontend/indicator.py:68
 msgid "Start recording"
-msgstr "بدء التصوير"
+msgstr "بدء التسجيل"
 
 #: ../kazam/app.py:309
 msgid "Take screenshot"
-msgstr ""
+msgstr "إلتقط الشاشة"
 
 #: ../kazam/app.py:558 ../kazam/app.py:573 ../kazam/frontend/indicator.py:76
 msgid "Finish recording"
-msgstr "أنهِ التسجيل"
+msgstr "إنهاء التسجيل"
 
 #: ../kazam/app.py:730
 msgid "Cancel countdown"
-msgstr "ألغِ عد التنازلي"
+msgstr "إلغاء العد التنازلي"
 
 #: ../kazam/frontend/window_select.py:155
 msgid "Select a window by clicking on it."
-msgstr ""
+msgstr "اختر نافذة عن طريق الضغط عليها."
 
 #: ../kazam/frontend/window_select.py:156
 msgid "Press ENTER or ESC to cancel"
-msgstr ""
+msgstr "اضغط Enter أو ESC للإلغاء"
 
 #: ../kazam/frontend/done_recording.py:50
 msgid "Recording finished"
-msgstr ""
+msgstr "انتهى التسجيل"
 
 #: ../kazam/frontend/done_recording.py:62
 msgid ""
@@ -258,7 +258,7 @@ msgstr "حفظ التسجيل"
 
 #: ../kazam/frontend/about_dialog.py:58
 msgid "Record a video of activity on your screen or capture a screenshot."
-msgstr ""
+msgstr "سجّل فيديو لنشاط على شاشتك أو التقط صورًا."
 
 #: ../kazam/frontend/save_dialog.py:38
 msgid "Save"
@@ -278,7 +278,7 @@ msgstr "أنهِ كازام"
 
 #: ../kazam/frontend/main_menu.py:65
 msgid "Open preferences"
-msgstr ""
+msgstr "إفتح التفضيلات"
 
 #: ../kazam/frontend/main_menu.py:67
 msgid "Help"
@@ -294,11 +294,11 @@ msgstr "عَنْ كازام"
 
 #: ../kazam/frontend/window_area.py:209
 msgid "Select an area by clicking and dragging."
-msgstr ""
+msgstr "تحديد منطقة عن طريق الضغط والسحب."
 
 #: ../kazam/frontend/window_area.py:210
 msgid "Press ENTER to confirm or ESC to cancel"
-msgstr ""
+msgstr "إضغط ENTER للتأكيد أو ESC للإلغاء"
 
 #: ../kazam/frontend/indicator.py:72
 msgid "Pause recording"
@@ -306,128 +306,8 @@ msgstr "ألبِث التسجيل"
 
 #: ../kazam/backend/grabber.py:171
 msgid "Save capture"
-msgstr ""
+msgstr "حفظ اللقطة"
 
 #: ../kazam/backend/prefs.py:137
 msgid "Unknown"
 msgstr "مجهول"
-
-#~ msgid "Description"
-#~ msgstr "الوصف"
-
-#~ msgid "Private"
-#~ msgstr "خاص"
-
-#~ msgid "Title"
-#~ msgstr "العنوان"
-
-#~ msgid "Category"
-#~ msgstr "القسم"
-
-#~ msgid "Screencaster"
-#~ msgstr "مسجل الشاشة"
-
-#~ msgid "Record a video of activity on your screen"
-#~ msgstr "سجل فيديو لنشاط على شاشتك"
-
-#~ msgid "Keywords"
-#~ msgstr "كلمات مفتاحية"
-
-#~ msgid "Screencast converted."
-#~ msgstr "تم التحويل."
-
-#~ msgid "Screencast uploaded."
-#~ msgstr "رُفِع التسجيل."
-
-#~ msgid "Encoder type"
-#~ msgstr "نوع المرمّز"
-
-#~ msgid "Audio Source 2"
-#~ msgstr "مصدر الصوت 2"
-
-#~ msgid "Audio Source 1"
-#~ msgstr "مصدر الصوت 1"
-
-#~ msgid "Video Source"
-#~ msgstr "مصدر الفيديو"
-
-#~ msgid "Countdown timer"
-#~ msgstr "مؤقت العد التنازلي"
-
-#~ msgid "Record Region"
-#~ msgstr "منطقة التسجيل"
-
-#~ msgid "Capture mouse"
-#~ msgstr "التقط الفأرة"
-
-#~ msgid "Framerate"
-#~ msgstr "معدّل الإطارات"
-
-#~ msgid "Close"
-#~ msgstr "أغلق"
-
-#~ msgid "Record"
-#~ msgstr "سجّل"
-
-#~ msgid "Kazam Screencaster - Recording finished"
-#~ msgstr "مسجّل الشاشة كازام - انتهى التسجيل"
-
-#~ msgid "Recording will start in ..."
-#~ msgstr "التسجيل سيبدأ خلال ..."
-
-#~ msgid "Record setup"
-#~ msgstr "إعداد التسجيل"
-
-#~ msgid "{0}"
-#~ msgstr "{0}"
-
-#~ msgid "Record a video of activity on your screen."
-#~ msgstr "لتسجيل فيديو لنشاط على شاشتك."
-
-#~ msgid "Press ENTER to confirm or ESC to cancel."
-#~ msgstr "اضغط ENTER للتأكيد أو ESC للإلغاء."
-
-#~ msgid "Kazam Screencaster"
-#~ msgstr "مسجل الشاشة \"كازام\""
-
-#~ msgid "Select region by resizing the window"
-#~ msgstr "حدد منطقة عن طريق تحجيم هذه النافذة"
-
-#~ msgid "Display {n} ({w}x{h})"
-#~ msgstr "شاشة عرض {n} ({w}x{h})"
-
-#~ msgid "Combined ({w}x{h})"
-#~ msgstr "مُجَمَّع ({w}x{h})"
-
-#~ msgid "Email"
-#~ msgstr "البريد الإلكتروني"
-
-#~ msgid "Your screencast has uploaded successfully."
-#~ msgstr "تم رفع تسجيلك بنجاح."
-
-#~ msgid "There was an error converting."
-#~ msgstr "حدث خطأ أثناء التحويل."
-
-#~ msgid "Uploading screencast..."
-#~ msgstr "يرفع التسجيل..."
-
-#~ msgid "It is available at the location below:"
-#~ msgstr "متوفر في المكان التالي:"
-
-#~ msgid "There was an error logging in."
-#~ msgstr "حدث خطأ أثناء الولوج."
-
-#~ msgid "Converting screencast..."
-#~ msgstr "يحوّل التسجيل..."
-
-#~ msgid "Logging in..."
-#~ msgstr "يلج..."
-
-#~ msgid "Log-in completed."
-#~ msgstr "اكتمل الولوج."
-
-#~ msgid "There was an error uploading."
-#~ msgstr "حدث خطأ أثناء الرفع."
-
-#~ msgid "Untitled_Screencast"
-#~ msgstr "ت_سجيل بلا عنوان"

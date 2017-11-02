@@ -28,7 +28,7 @@ logger = logging.getLogger("Done Recording")
 from gettext import gettext as _
 from gi.repository import Gtk, GObject
 
-from kazam.backend.constants import *
+from kazam.backend.prefs import *
 from kazam.frontend.combobox import EditComboBox
 from kazam.frontend.save_dialog import SaveDialog
 
@@ -57,11 +57,11 @@ class DoneRecording(Gtk.Window):
 
         # Setup UI
         self.set_border_width(10)
-        self.vbox = Gtk.Box(spacing = 20, orientation = Gtk.Orientation.VERTICAL)
+        self.vbox = Gtk.Box(spacing=20, orientation=Gtk.Orientation.VERTICAL)
         self.label_box = Gtk.Box()
         self.done_label = Gtk.Label(_("Kazam finished recording.\nWhat do you want to do now?"))
         self.label_box.add(self.done_label)
-        self.grid = Gtk.Grid(row_spacing = 10, column_spacing = 5)
+        self.grid = Gtk.Grid(row_spacing=10, column_spacing=5)
         self.radiobutton_edit = Gtk.RadioButton.new_with_label_from_widget(None, _("Edit with:"))
         self.combobox_editor = EditComboBox(self.icons)
         self.grid.add(self.radiobutton_edit)
@@ -104,6 +104,7 @@ class DoneRecording(Gtk.Window):
         self.vbox.pack_start(self.hbox, True, True, 0)
         self.add(self.vbox)
         self.connect("delete-event", self.cb_delete_event)
+        self.set_resizable(False)
         self.show_all()
         self.present()
 

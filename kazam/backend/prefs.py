@@ -21,8 +21,11 @@
 
 import os
 import logging
+from os.path import expanduser
 from gettext import gettext as _
 from xdg.BaseDirectory import xdg_config_home
+
+from gi.repository import Gdk, GdkX11
 
 from kazam.backend.config import KazamConfig
 
@@ -76,9 +79,11 @@ class Prefs():
         self.pa_q = None
         self.framerate = 15
         self.autosave_video = False
+        self.autosave_video_dir = None
         self.autosave_video_file = None
 
         self.autosave_picture = False
+        self.autosave_picture_dir = None
         self.autosave_picture_file = None
         self.shutter_sound = True
         self.shutter_type = 0
@@ -109,12 +114,18 @@ class Prefs():
         self.dist = ('Ubuntu', '12.10', 'quantal')
         self.silent = False
         self.sound = True
+        self.first_run = True
 
         self.config = KazamConfig()
 
         self.read_config()
 
         self.get_dirs()
+
+        #
+        # Fix codec list
+        #
+
 
     def get_audio_sources(self):
         self.logger.debug("Getting Audio sources.")
@@ -142,7 +153,7 @@ class Prefs():
         try:
             f = open(os.path.join(xdg_config_home, "user-dirs.dirs"))
             for la in f:
-                if la.startswith("XDG_VIDEOS") or la.startswith("XDG_DOCUMENTS") or la.startswith("XDG_PICTURES") :
+                if la.startswith("XDG_VIDEOS") or la.startswith("XDG_DOCUMENTS") or la.startswith("XDG_PICTURES"):
                     (idx, val) = la.strip()[:-1].split('="')
                     paths[idx] = os.path.expandvars(val)
         except:
@@ -155,38 +166,47 @@ class Prefs():
 
         paths['HOME_DIR'] = os.path.expandvars("$HOME")
 
-        if os.path.isdir(paths['XDG_VIDEOS_DIR']):
+        if 'XDG_VIDEOS_DIR' in paths and os.path.isdir(paths['XDG_VIDEOS_DIR']):
             self.video_dest = paths['XDG_VIDEOS_DIR']
-        elif os.path.isdir(paths['XDG_DOCUMENTS_DIR']):
+        elif 'XDG_DOCUMENTS_DIR' in paths and os.path.isdir(paths['XDG_DOCUMENTS_DIR']):
             self.video_dest = paths['XDG_DOCUMENTS_DIR']
-        elif os.path.isdir(paths['HOME_DIR']):
+        elif 'HOME_DIR' in paths and os.path.isdir(paths['HOME_DIR']):
             self.video_dest = paths['HOME_DIR']
+        else:
+            self.video_dest = expanduser("~")
 
-        if os.path.isdir(paths['XDG_PICTURES_DIR']):
+        if 'XDG_PICTURES_DIR' in paths and os.path.isdir(paths['XDG_PICTURES_DIR']):
+            self.logger.debug("XDG_PICTURES is a directory and accessible")
             self.picture_dest = paths['XDG_PICTURES_DIR']
-        elif os.path.isdir(paths['XDG_DOCUMENTS_DIR']):
+        elif 'XDG_DOCUMENTS_DIR' in paths and os.path.isdir(paths['XDG_DOCUMENTS_DIR']):
+            self.logger.debug("XDG_DOCUMENTS is a directory and accessible")
             self.picture_dest = paths['XDG_DOCUMENTS_DIR']
-        elif os.path.isdir(paths['HOME_DIR']):
+        elif 'HOME_DIR' in paths and os.path.isdir(paths['HOME_DIR']):
+            self.logger.debug("HOME_DIR is a directory and accessible")
             self.picture_dest = paths['HOME_DIR']
-
+        else:
+            self.logger.debug("Fallback to ~ for save files.")
+            self.picture_dest = expanduser("~")
 
     def get_sound_files(self):
         self.sound_files = []
-        for root, dir, files in os.walk(os.path.join(self.datadir, "sounds")):
-            for file in files:
-                if file.endswith('.ogg'):
-                    self.sound_files.append(file)
+        for root, d_dir, files in os.walk(os.path.join(self.datadir, "sounds")):
+            for f_file in files:
+                if f_file.endswith('.ogg'):
+                    self.sound_files.append(f_file)
 
-
-    def read_config (self):
+    def read_config(self):
         self.audio_source = int(self.config.get("main", "audio_source"))
         self.audio2_source = int(self.config.get("main", "audio2_source"))
         self.main_x = int(self.config.get("main", "last_x"))
         self.main_y = int(self.config.get("main", "last_y"))
-
-        self.codec = int(self.config.get("main", "codec"))
-
         self.countdown_timer = float(self.config.get("main", "counter"))
+
+        #
+        # Just in case this blows up in our face later
+        #
+        if self.countdown_timer > 10:
+            self.countdown_timer = 10
         self.framerate = float(self.config.get("main", "framerate"))
 
         self.capture_cursor = self.config.getboolean("main", "capture_cursor")
@@ -199,14 +219,38 @@ class Prefs():
         self.countdown_splash = self.config.getboolean("main", "countdown_splash")
 
         self.autosave_video = self.config.getboolean("main", "autosave_video")
+        self.autosave_video_dir = self.config.get("main", "autosave_video_dir")
         self.autosave_video_file = self.config.get("main", "autosave_video_file")
 
         self.autosave_picture = self.config.getboolean("main", "autosave_picture")
+        self.autosave_picture_dir = self.config.get("main", "autosave_picture_dir")
         self.autosave_picture_file = self.config.get("main", "autosave_picture_file")
 
         self.shutter_sound = self.config.getboolean("main", "shutter_sound")
         self.shutter_type = int(self.config.get("main", "shutter_type"))
 
+        self.first_run = self.config.getboolean("main", "first_run")
+
+        #
+        # Determine which codec to use
+        #
+        if self.first_run:
+            self.logger.debug("First run detected.")
+            self.config.set("main", "first_run", False)
+            self.config.write()
+
+            codecs_avail = detect_codecs()
+            if CODEC_H264 in codecs_avail:
+                self.codec = CODEC_H264
+                self.logger.debug("Setting H264 as default codec.")
+            elif CODEC_VP8 in codecs_avail:
+                self.codec = CODEC_VP8
+                self.logger.debug("Setting VP8 as default codec.")
+            else:
+                self.codec = CODEC_RAW
+                self.logger.debug("Setting RAW as default codec.")
+        else:
+            self.codec = int(self.config.get("main", "codec"))
 
     def save_config(self):
         self.config.set("main", "capture_cursor", self.capture_cursor)
@@ -228,12 +272,208 @@ class Prefs():
         self.config.set("main", "codec", self.codec)
         self.config.set("main", "framerate", self.framerate)
         self.config.set("main", "autosave_video", self.autosave_video)
+        self.config.set("main", "autosave_video_dir", self.autosave_video_dir)
         self.config.set("main", "autosave_video_file", self.autosave_video_file)
         self.config.set("main", "autosave_picture", self.autosave_picture)
+        self.config.set("main", "autosave_picture_dir", self.autosave_picture_dir)
         self.config.set("main", "autosave_picture_file", self.autosave_picture_file)
         self.config.set("main", "shutter_sound", self.shutter_sound)
         self.config.set("main", "shutter_type", self.shutter_type)
 
         self.config.write()
 
+class hw:
+    def __init__(self):
+        self.logger = logging.getLogger("Prefs-HW")
+        self.logger.debug("Getting hardware specs")
+        self.screens = None
+        self.combined_screen = None
+
+        self.get_screens()
+
+    def get_current_screen(self, window = None):
+        try:
+            if window:
+                screen = self.default_screen.get_monitor_at_window(window.get_window())
+            else:
+                disp = GdkX11.X11Display.get_default()
+                dm = Gdk.Display.get_device_manager(disp)
+                pntr_device = dm.get_client_pointer()
+                (src, x, y) = pntr_device.get_position()
+                screen = self.default_screen.get_monitor_at_point(x, y)
+        except:
+            screen = 0
+        return screen
+
+    def get_screens(self):
+        try:
+            self.logger.debug("Getting Video sources.")
+            self.screens = []
+            self.default_screen = Gdk.Screen.get_default()
+            self.logger.debug("Found {0} monitor(s).".format(self.default_screen.get_n_monitors()))
+
+            for i in range(self.default_screen.get_n_monitors()):
+                rect = self.default_screen.get_monitor_geometry(i)
+                self.logger.debug("  Monitor {0} - X: {1}, Y: {2}, W: {3}, H: {4}".format(i,
+                                                                                          rect.x,
+                                                                                          rect.y,
+                                                                                          rect.width,
+                                                                                          rect.height))
+                self.screens.append({"x": rect.x,
+                                     "y": rect.y,
+                                     "width": rect.width,
+                                     "height": rect.height})
+
+            if self.default_screen.get_n_monitors() > 1:
+                self.combined_screen = {"x": 0, "y": 0,
+                                        "width": self.default_screen.get_width(),
+                                        "height": self.default_screen.get_height()}
+                self.logger.debug("  Combined screen - X: 0, Y: 0, W: {0}, H: {1}".format(self.default_screen.get_width(),
+                                                                                          self.default_screen.get_height()))
+            else:
+                self.combined_screen = None
+
+        except:
+            self.logger.warning("Unable to find any video sources.")
+
+
+def detect_codecs():
+    logger = logging.getLogger("Prefs-DC")
+    from gi.repository import Gst
+
+    Gst.init(None)
+
+    codecs_supported = []
+    codec_test = None
+    for codec in CODEC_LIST:
+        logger.debug("Testing for: {0}".format(codec[2]))
+        if codec[0]:
+            try:
+                codec_test = Gst.ElementFactory.make(codec[1], "video_encoder")
+                logger.debug("Error loading {0} GStreamer plugin - support disabled.".format(codec))
+            except:
+                codec_test = None
+
+            if codec_test:
+                codecs_supported.append(codec[0])
+                logger.debug("Supported encoder: {0}.".format(codec[2]))
+            else:
+                logger.debug("Unable to find {0} GStreamer plugin - support disabled.".format(codec))
+
+        else:
+            # RAW codec is None, so we don't try to load it.
+            codecs_supported.append(codec[0])
+            logger.debug("Supported encoder: {0}.".format(codec[2]))
+        codec_test = None
+    return codecs_supported
+
+
+def get_codec(codec):
+    for c in CODEC_LIST:
+        if c[0] == codec:
+            return c
+    return None
+
+
+#
+# The dreaded constants, we like those from time to time. Really.
+#
+# Codecs
+
+CODEC_RAW = 0
+CODEC_VP8 = 1
+CODEC_H264 = 2
+CODEC_HUFF = 3
+CODEC_JPEG = 4
+
+#
+# Number, gstreamer element name, string description, file extension, advanced
+#
+
+CODEC_LIST = [[0, None, 'RAW (AVI)', '.avi', True],
+              [1, 'vp8enc', 'VP8 (WEBM)', '.webm', False],
+              [2, 'x264enc', 'H264 (MP4)', '.mp4', False],
+              [3, 'avenc_huffyuv', 'HUFFYUV (AVI)', '.avi', True],
+              [4, 'avenc_ljpeg', 'Lossless JPEG (AVI)', '.avi', True],
+              ]
+
+# PulseAudio Error Codes
+PA_LOAD_ERROR = 1
+PA_GET_STATE_ERROR = 2
+PA_STARTUP_ERROR = 3
+PA_UNABLE_TO_CONNECT = 4
+PA_UNABLE_TO_CONNECT2 = 5
+PA_MAINLOOP_START_ERROR = 6
+PA_GET_SOURCES_ERROR = 7
+PA_GET_SOURCES_TIMEOUT = 8
+PA_GET_SOURCE_ERROR = 9
+PA_GET_SOURCE_TIMEOUT = 10
+PA_MAINLOOP_END_ERROR = 11
+
+# PulseAudio Status Codes
+PA_STOPPED = 0
+PA_WORKING = 1
+PA_FINISHED = 2
+PA_ERROR = 3
+
+# PulseAudio State Codes
+PA_STATE_READY = 0
+PA_STATE_BUSY = 1
+PA_STATE_FAILED = 2
+PA_STATE_WORKING = 3
+
+# Various actions
+ACTION_SAVE = 0
+ACTION_EDIT = 1
+
+# Blink modes and states
+BLINK_STOP = 0
+BLINK_START = 1
+BLINK_SLOW = 2
+BLINK_FAST = 3
+BLINK_STOP_ICON = 4
+BLINK_READY_ICON = 5
+
+# Main modes
+MODE_SCREENCAST = 0
+MODE_SCREENSHOT = 1
+
+# Record modes
+MODE_FULL = 0
+MODE_ALL = 1
+MODE_AREA = 2
+MODE_WIN = 3
+MODE_ACTIVE = 4
+MODE_GOD = 666
+
+# Area resize handles
+HANDLE_TL = 0
+HANDLE_TC = 1
+HANDLE_TR = 2
+HANDLE_CL = 3
+HANDLE_MOVE = 4
+HANDLE_CR = 5
+HANDLE_BL = 6
+HANDLE_BC = 7
+HANDLE_BR = 8
+
+# Area resize handle cursors
+HANDLE_CURSORS = (
+    Gdk.CursorType.TOP_LEFT_CORNER,
+    Gdk.CursorType.TOP_SIDE,
+    Gdk.CursorType.TOP_RIGHT_CORNER,
+    Gdk.CursorType.LEFT_SIDE,
+    Gdk.CursorType.FLEUR,
+    Gdk.CursorType.RIGHT_SIDE,
+    Gdk.CursorType.BOTTOM_LEFT_CORNER,
+    Gdk.CursorType.BOTTOM_SIDE,
+    Gdk.CursorType.BOTTOM_RIGHT_CORNER
+)
+
+
+#
+# Singletons, because we also like singletons from time to time ... :)
+#
+
 prefs = Prefs()
+HW = hw()
