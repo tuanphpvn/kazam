@@ -26,7 +26,7 @@ logger = logging.getLogger("Save Dialog")
 
 from gi.repository import Gtk
 from gettext import gettext as _
-
+from datetime import datetime
 from kazam.backend.prefs import *
 from kazam.backend.constants import *
 
@@ -37,24 +37,25 @@ def SaveDialog(title, old_path, codec, main_mode=MODE_SCREENCAST):
                                    (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                                    _("Save"), Gtk.ResponseType.OK))
 
+
+    dt = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
     if main_mode == MODE_SCREENCAST:
-        dialog.set_current_name("{0}{1}".format(_("Untitled_Screencast"), CODEC_LIST[codec][3]))
+        dialog.set_current_name("{0} {1}{2}".format(_("Screencast"), dt, CODEC_LIST[codec][3]))
     elif main_mode == MODE_SCREENSHOT:
-        dialog.set_current_name(_("Untitled_Capture.png"))
+        dialog.set_current_name("{0} {1}.png".format(_("Screenshot"), dt))
 
     dialog.set_do_overwrite_confirmation(True)
 
     if old_path and os.path.isdir(old_path):
             dialog.set_current_folder(old_path)
-    elif os.path.isdir(prefs.video_dest):
-        dialog.set_current_folder(prefs.video_dest)
+    else:
+        if main_mode == MODE_SCREENCAST:
+            dialog.set_current_folder(prefs.video_dest)
+        elif main_mode == MODE_SCREENSHOT:
+            dialog.set_current_folder(prefs.picture_dest)
+
 
     dialog.show_all()
-    #
-    # In Oneiric Ocelot FileChooser dialog.run() will always report:
-    # (kazam:4692): Gtk-WARNING **: Unable to retrieve the file info for...
-    # This appears to be a bug in Gtk3 and it is fixed in Precise Pangolin.
-    #
     result = dialog.run()
     old_path = dialog.get_current_folder()
     return dialog, result, old_path

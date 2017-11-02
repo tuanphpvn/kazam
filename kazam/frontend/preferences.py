@@ -30,9 +30,16 @@ from gettext import gettext as _
 from kazam.utils import *
 from kazam.backend.prefs import *
 from kazam.backend.constants import *
-from kazam.backend.gstreamer_gi import detect_codecs, get_codec
+from kazam.backend.gstreamer import detect_codecs, get_codec
 
 class Preferences(GObject.GObject):
+    __gsignals__ = {
+        "prefs-quit" : (GObject.SIGNAL_RUN_LAST,
+                        None,
+                        (),
+            ),
+        }
+
     def __init__(self):
         GObject.GObject.__init__(self)
         logger.debug("Preferences Init.")
@@ -58,7 +65,7 @@ class Preferences(GObject.GObject):
 
         audio_renderer = Gtk.CellRendererText()
         audio_renderer.props.ellipsize = Pango.EllipsizeMode.END
-        audio_renderer.props.max_width_chars = 45
+        audio_renderer.props.max_width_chars = 40
 
         self.combobox_codec.pack_start(codec_renderer, True)
         self.combobox_codec.add_attribute(codec_renderer, "text", 1)
@@ -209,6 +216,7 @@ class Preferences(GObject.GObject):
 
     def cb_delete_event(self, widget, user_data):
         logger.debug("Deleteting preferences window")
+        self.emit("prefs-quit")
 
     def cb_switch_countdown_splash(self, widget, user_data):
         prefs.countdown_splash = widget.get_active()

@@ -55,10 +55,7 @@ class SelectWindow(GObject.GObject):
         self.window.connect("draw", self.cb_draw)
         self.window.connect("key-press-event", self.cb_keypress_event)
         self.window.connect("button-press-event", self.cb_button_press_event)
-        self.window.connect("leave-notify-event", self.cb_motion_notify_event)
-
-        self.window.set_default_geometry(1, 1)
-        self.window.fullscreen()
+        self.window.connect("leave-notify-event", self.cb_leave_notify_event)
 
         self.window.set_border_width(30)
         self.window.set_app_paintable(True)
@@ -72,6 +69,10 @@ class SelectWindow(GObject.GObject):
         self.visual = self.screen.get_rgba_visual()
         self.recording = False
 
+        self.disp = GdkX11.X11Display.get_default()
+        self.dm = Gdk.Display.get_device_manager(self.disp)
+        self.pntr_device = self.dm.get_client_pointer()
+
         if self.visual is not None and self.screen.is_composited():
             logger.debug("Compositing window manager detected.")
             self.window.set_visual(self.visual)
@@ -79,14 +80,24 @@ class SelectWindow(GObject.GObject):
         else:
             self.compositing = False
 
-    def cb_motion_notify_event(self, widget, event):
-        time.sleep(0.01) # Facepalm
-        disp = GdkX11.X11Display.get_default()
-        dm = Gdk.Display.get_device_manager(disp)
-        pntr_device = dm.get_client_pointer()
-        (scr, x, y) = pntr_device.get_position()
+        (scr, x, y) = self.pntr_device.get_position()
+        cur = scr.get_monitor_at_point(x, y)
         self.window.unfullscreen()
-        self.window.move(x, y)
+        self.window.move(HW.screens[cur]['x'],
+                         HW.screens[cur]['y'])
+        self.window.fullscreen()
+        crosshair_cursor = Gdk.Cursor(Gdk.CursorType.CROSSHAIR)
+        self.last_cursor = Gdk.Cursor(Gdk.CursorType.LEFT_PTR)
+        self.gdk_win = self.window.get_root_window()
+        self.gdk_win.set_cursor(crosshair_cursor)
+
+    def cb_leave_notify_event(self, widget, event):
+        (scr, x, y) = self.pntr_device.get_position()
+        cur = scr.get_monitor_at_point(x, y)
+        self.window.unfullscreen()
+        logger.debug("Move to X: {0} Y: {1}".format(HW.screens[cur]['x'], HW.screens[cur]['y']))
+        self.window.move(HW.screens[cur]['x'],
+                         HW.screens[cur]['y'])
         self.window.fullscreen()
 
     def cb_button_press_event(self, widget, event):
@@ -110,6 +121,7 @@ class SelectWindow(GObject.GObject):
                         if geometry[0] <= event.x_root <= (geometry[0] + geometry[2]) and geometry[1] <= event.y_root <= (geometry[1] + geometry[3]):
                             self.xid = win.get_xid()
                             break
+            self.gdk_win.set_cursor(self.last_cursor)
             self.window.hide()
             if self.xid:
                 self.emit("window-selected")
@@ -119,6 +131,7 @@ class SelectWindow(GObject.GObject):
     def cb_keypress_event(self, widget, event):
         (op, keycode) = event.get_keycode()
         if keycode == 36 or keycode == 104 or keycode == 9: # Enter or Escape
+            self.gdk_win.set_cursor(self.last_cursor)
             self.window.hide()
             self.emit("window-canceled")
 

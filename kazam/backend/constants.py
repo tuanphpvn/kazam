@@ -88,10 +88,12 @@ MODE_FULL = 0
 MODE_ALL = 1
 MODE_AREA = 2
 MODE_WIN = 3
+MODE_ACTIVE = 4
+MODE_GOD = 666
 
 import logging
 
-from gi.repository import Gdk
+from gi.repository import Gdk, GdkX11
 
 class hw:
     def __init__(self):
@@ -107,9 +109,11 @@ class hw:
             if window:
                 screen = self.default_screen.get_monitor_at_window(window.get_window())
             else:
-                root = self.default_screen.get_root_window()
-                pointer = root.get_pointer()
-                screen = self.default_screen.get_monitor_at_point(pointer[1], pointer[2])
+                disp = GdkX11.X11Display.get_default()
+                dm = Gdk.Display.get_device_manager(disp)
+                pntr_device = dm.get_client_pointer()
+                (src, x, y) = pntr_device.get_position()
+                screen = self.default_screen.get_monitor_at_point(x, y)
         except:
            screen = 0
         return screen
@@ -139,6 +143,8 @@ class hw:
                                        "height": self.default_screen.get_height()}
                 self.logger.debug("  Combined screen - X: 0, Y: 0, W: {0}, H: {1}".format(self.default_screen.get_width(),
                                                                                           self.default_screen.get_height()))
+            else:
+                self.combined_screen = None
 
         except:
             self.logger.warning("Unable to find any video sources.")

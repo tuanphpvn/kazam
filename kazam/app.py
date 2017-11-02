@@ -26,7 +26,6 @@ import locale
 import shutil
 import gettext
 import logging
-import time
 
 from subprocess import Popen
 from gi.repository import Gtk, Gdk, GObject
@@ -36,10 +35,9 @@ from kazam.utils import *
 from kazam.backend.prefs import *
 from kazam.backend.constants import *
 from kazam.backend.grabber import Grabber
-from kazam.backend.config import KazamConfig
 from kazam.frontend.main_menu import MainMenu
 from kazam.frontend.window_area import AreaWindow
-from kazam.backend.gstreamer_gi import Screencast
+from kazam.backend.gstreamer import Screencast
 from kazam.frontend.preferences import Preferences
 from kazam.frontend.about_dialog import AboutDialog
 from kazam.frontend.indicator import KazamIndicator
@@ -99,6 +97,29 @@ class KazamApp(GObject.GObject):
         self.icons.append_search_path(os.path.join(prefs.datadir,"icons", "48x48", "apps"))
         self.icons.append_search_path(os.path.join(prefs.datadir,"icons", "16x16", "apps"))
 
+        try:
+            from gi.repository import Unity, Dbusmenu
+            launcher = Unity.LauncherEntry.get_for_desktop_id("kazam.desktop")
+            ql = Dbusmenu.Menuitem.new()
+            ql_item1 = Dbusmenu.Menuitem.new()
+            ql_item1.property_set(Dbusmenu.MENUITEM_PROP_LABEL, _("Record screencast"))
+            ql_item1.property_set_bool(Dbusmenu.MENUITEM_PROP_VISIBLE, True)
+            ql_item1.connect("item-activated", self.cb_ql_screencast)
+            ql.child_append(ql_item1)
+            ql_item2 = Dbusmenu.Menuitem.new()
+            ql_item2.property_set(Dbusmenu.MENUITEM_PROP_LABEL, _("Take screenshot"))
+            ql_item2.property_set_bool(Dbusmenu.MENUITEM_PROP_VISIBLE, True)
+            ql_item2.connect("item-activated", self.cb_ql_screenshot)
+            ql.child_append(ql_item2)
+            ql_item3 = Dbusmenu.Menuitem.new()
+            ql_item3.property_set(Dbusmenu.MENUITEM_PROP_LABEL, _("Preferences"))
+            ql_item3.property_set_bool(Dbusmenu.MENUITEM_PROP_VISIBLE, True)
+            ql_item3.connect("item-activated", self.cb_ql_preferences)
+            ql.child_append(ql_item3)
+            launcher.set_property("quicklist", ql)
+        except ImportError:
+            logger.warning("Unity and Dbusmenu not found. Skipping launcher integration.")
+
         # Initialize all the variables
 
         self.main_x = 0
@@ -107,7 +128,8 @@ class KazamApp(GObject.GObject):
         self.tempfile = ""
         self.recorder = None
         self.area_window = None
-        self.old_path = None
+        self.old_vid_path = None
+        self.old_pic_path = None
         self.in_countdown = False
         self.recording_paused = False
         self.recording = False
@@ -120,13 +142,6 @@ class KazamApp(GObject.GObject):
             prefs.pa_q.start()
 
         self.mainmenu = MainMenu()
-
-        #
-        # Setup config
-        #
-        self.config = KazamConfig()
-
-        self.read_config()
 
         logger.debug("Connecting indicator signals.")
         logger.debug("Starting in silent mode: {0}".format(prefs.silent))
@@ -294,7 +309,6 @@ class KazamApp(GObject.GObject):
                 self.last_mode.set_active(True)
             self.indicator.menuitem_start.set_label(_("Take screenshot"))
 
-
     #
     # Record mode toggles
     #
@@ -342,6 +356,25 @@ class KazamApp(GObject.GObject):
                 self.select_window.window.destroy()
                 self.select_window = None
 
+
+    #
+    # Unity quick list callbacks
+    #
+
+    def cb_ql_screencast(self, menu, data):
+        logger.debug("Screencast quicklist activated.")
+        self.btn_cast.set_active(True)
+        self.run_counter()
+
+    def cb_ql_screenshot(self, menu, data):
+        logger.debug("Screenshot quicklist activated.")
+        self.btn_shot.set_active(True)
+        self.run_counter()
+
+    def cb_ql_preferences(self, menu, data):
+        logger.debug("Preferences quicklist activated.")
+        self.cb_preferences_request(None)
+
     def cb_record_area_clicked(self, widget):
         if self.area_window:
             logger.debug("Area mode clicked.")
@@ -377,6 +410,7 @@ class KazamApp(GObject.GObject):
         prefs.xid = self.select_window.xid
         prefs.xid_geometry = self.select_window.geometry
         logger.debug("Window selected: {0} - {1}".format(self.select_window.win_name, prefs.xid))
+        logger.debug("Window geometry: {0}".format(self.select_window.geometry))
         self.window.set_sensitive(True)
 
     def cb_window_canceled(self, widget):
@@ -387,15 +421,23 @@ class KazamApp(GObject.GObject):
     def cb_screen_size_changed(self, screen):
         logger.debug("Screen size changed.")
         HW.get_screens()
+        #
+        # I combined screen was set to none, turn off the button for all screens
+        #
+        if HW.combined_screen:
+            self.btn_allscreens.set_sensitive(True)
+        else:
+            self.btn_allscreens.set_sensitive(False)
+
 
     def cb_configure_event(self, widget, event):
         if event.type == Gdk.EventType.CONFIGURE:
-            self.main_x = event.x
-            self.main_y = event.y
+            prefs.main_x = event.x
+            prefs.main_y = event.y
 
     def cb_quit_request(self, indicator):
         logger.debug("Quit requested.")
-        (self.main_x, self.main_y) = self.window.get_position()
+        (prefs.main_x, prefs.main_y) = self.window.get_position()
         try:
             os.remove(self.recorder.tempfile)
             os.remove("{0}.mux".format(self.recorder.tempfile))
@@ -404,7 +446,7 @@ class KazamApp(GObject.GObject):
         except AttributeError:
             pass
 
-        self.save_config()
+        prefs.save_config()
 
         if prefs.sound:
             prefs.pa_q.end()
@@ -421,12 +463,12 @@ class KazamApp(GObject.GObject):
             logger.debug("Show requested, raising window.")
             self.window.show_all()
             self.window.present()
-            self.window.move(self.main_x, self.main_y)
+            self.window.move(prefs.main_x, prefs.main_y)
         else:
             self.window.hide()
 
     def cb_close_clicked(self, indicator):
-        (self.main_x, self.main_y) = self.window.get_position()
+        (prefs.main_x, prefs.main_y) = self.window.get_position()
         self.window.hide()
 
     def cb_about_request(self, activated):
@@ -493,7 +535,7 @@ class KazamApp(GObject.GObject):
             self.done_recording = DoneRecording(self.icons,
                                             self.tempfile,
                                             prefs.codec,
-                                            self.old_path)
+                                            self.old_vid_path)
             logger.debug("Done Recording initialized.")
             self.done_recording.connect("save-done", self.cb_save_done)
             self.done_recording.connect("save-cancel", self.cb_save_cancel)
@@ -516,7 +558,7 @@ class KazamApp(GObject.GObject):
                 fname = get_next_filename(prefs.picture_dest, prefs.autosave_picture_file, ".png")
                 self.grabber.autosave(fname)
             else:
-                self.grabber.save_capture(self.old_path)
+                self.grabber.save_capture(self.old_pic_path)
 
 
     def cb_pause_request(self, widget):
@@ -531,11 +573,15 @@ class KazamApp(GObject.GObject):
 
     def cb_save_done(self, widget, result):
         logger.debug("Save Done, result: {0}".format(result))
-        self.old_path = result
+        if self.main_mode == MODE_SCREENCAST:
+            self.old_vid_path = result
+        else:
+            self.old_pic_path = result
+
         self.window.set_sensitive(True)
         self.window.show_all()
         self.window.present()
-        self.window.move(self.main_x, self.main_y)
+        self.window.move(prefs.main_x, prefs.main_y)
 
     def cb_save_cancel(self, widget):
         try:
@@ -550,7 +596,7 @@ class KazamApp(GObject.GObject):
         self.window.set_sensitive(True)
         self.window.show_all()
         self.window.present()
-        self.window.move(self.main_x, self.main_y)
+        self.window.move(prefs.main_x, prefs.main_y)
 
     def cb_help_about(self, widget):
         AboutDialog(self.icons)
@@ -584,6 +630,10 @@ class KazamApp(GObject.GObject):
         prefs.capture_cursor_pic = widget.get_active()
         logger.debug("Capture cursor_pic: {0}.".format(prefs.capture_cursor_pic))
 
+    def cb_check_borders_pic(self, widget):
+        prefs.capture_borders_pic = widget.get_active()
+        logger.debug("Capture borders_pic: {0}.".format(prefs.capture_borders_pic))
+
     def cb_check_speakers(self, widget):
         prefs.capture_speakers = widget.get_active()
         logger.debug("Capture speakers: {0}.".format(prefs.capture_speakers))
@@ -606,8 +656,8 @@ class KazamApp(GObject.GObject):
         #
         (main_x, main_y) = self.window.get_position()
         if main_x and main_y:
-            self.main_x = main_x
-            self.main_y = main_y
+            prefs.main_x = main_x
+            prefs.main_y = main_y
 
         self.indicator.recording = True
         self.indicator.menuitem_start.set_sensitive(False)
@@ -679,78 +729,20 @@ class KazamApp(GObject.GObject):
         except Exception as e:
             logger.exception("EXCEPTION: Setlocale failed, no language support.")
 
-    def read_config (self):
-        prefs.audio_source = self.config.getint("main", "audio_source")
-        prefs.audio2_source = self.config.getint("main", "audio2_source")
-        logger.debug("Restoring Audio source state: {0} {1}".format(
-            prefs.audio_source,
-            prefs.audio2_source))
-
-        self.main_x = self.config.getint("main", "last_x")
-        self.main_y = self.config.getint("main", "last_y")
-
-        prefs.codec = self.config.getint("main", "codec")
-
-        prefs.countdown_timer = self.config.getfloat("main", "counter")
-        prefs.framerate = self.config.getfloat("main", "framerate")
-
-        prefs.capture_cursor = self.config.getboolean("main", "capture_cursor")
-        prefs.capture_microphone = self.config.getboolean("main", "capture_microphone")
-        prefs.capture_speakers = self.config.getboolean("main", "capture_speakers")
-
-        prefs.capture_cursor_pic = self.config.getboolean("main", "capture_cursor_pic")
-
-        prefs.countdown_splash = self.config.getboolean("main", "countdown_splash")
-
-        prefs.autosave_video = self.config.getboolean("main", "autosave_video")
-        prefs.autosave_video_file = self.config.get("main", "autosave_video_file")
-
-        prefs.autosave_picture = self.config.getboolean("main", "autosave_picture")
-        prefs.autosave_picture_file = self.config.get("main", "autosave_picture_file")
-
-        prefs.shutter_sound = self.config.getboolean("main", "shutter_sound")
-        prefs.shutter_type = self.config.getint("main", "shutter_type")
 
     def restore_UI (self):
-
-        self.window.move(self.main_x, self.main_y)
+        self.window.move(prefs.main_x, prefs.main_y)
         self.chk_cursor.set_active(prefs.capture_cursor)
         self.chk_speakers.set_active(prefs.capture_speakers)
         self.chk_microphone.set_active(prefs.capture_microphone)
-
         self.chk_cursor_pic.set_active(prefs.capture_cursor_pic)
-
+        self.chk_borders_pic.set_active(prefs.capture_borders_pic)
         self.spinbutton_delay.set_value(prefs.countdown_timer)
 
-    def save_config(self):
-        logger.debug("Saving state.")
-
-        self.config.set("main", "capture_cursor", prefs.capture_cursor)
-        self.config.set("main", "capture_speakers", prefs.capture_speakers)
-        self.config.set("main", "capture_microphone", prefs.capture_microphone)
-
-        self.config.set("main", "capture_cursor_pic", prefs.capture_cursor_pic)
-
-        self.config.set("main", "last_x", self.main_x)
-        self.config.set("main", "last_y", self.main_y)
-
-        if prefs.sound:
-            logger.debug("Saving Audio source state: {0} {1}".format(
-                                                                     prefs.audio_source,
-                                                                     prefs.audio2_source))
-
-            self.config.set("main", "audio_source", prefs.audio_source)
-            self.config.set("main", "audio2_source", prefs.audio2_source)
-
-        self.config.set("main", "countdown_splash", prefs.countdown_splash)
-        self.config.set("main", "counter", prefs.countdown_timer)
-        self.config.set("main", "codec", prefs.codec)
-        self.config.set("main", "framerate", prefs.framerate)
-        self.config.set("main", "autosave_video", prefs.autosave_video)
-        self.config.set("main", "autosave_video_file", prefs.autosave_video_file)
-        self.config.set("main", "autosave_picture", prefs.autosave_picture)
-        self.config.set("main", "autosave_picture_file", prefs.autosave_picture_file)
-        self.config.set("main", "shutter_sound", prefs.shutter_sound)
-        self.config.set("main", "shutter_type", prefs.shutter_type)
-
-        self.config.write()
+        #
+        # Turn off the combined screen icon if we don't have more than one screen.
+        #
+        if HW.combined_screen:
+            self.btn_allscreens.set_sensitive(True)
+        else:
+            self.btn_allscreens.set_sensitive(False)

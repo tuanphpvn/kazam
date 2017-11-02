@@ -47,10 +47,15 @@ class Grabber(GObject.GObject):
         logger.debug("Starting Grabber.")
 
 
-    def setup_sources(self, video_source, area, xid):
+    def setup_sources(self, video_source, area, xid, active = False, god = False):
         self.video_source = video_source
         self.area = area
         self.xid = xid
+        self.god = god
+        if active:
+            from gi.repository import GdkX11
+            active_win = HW.default_screen.get_active_window()
+            self.xid = GdkX11.X11Window.get_xid(active_win)
 
         logger.debug("Grabber source: {0}, {1}, {2}, {3}".format(self.video_source['x'],
                                                                  self.video_source['y'],
@@ -66,12 +71,26 @@ class Grabber(GObject.GObject):
         #
         # Rewrite this, because it sucks
         #
-        soundfile = os.path.join(prefs.datadir, 'sounds', prefs.sound_files[prefs.shutter_type])
-        subprocess.call(['/usr/bin/canberra-gtk-play', '-f', soundfile])
+        if prefs.shutter_sound and (not self.god):
+            soundfile = os.path.join(prefs.datadir, 'sounds', prefs.sound_files[prefs.shutter_type])
+            subprocess.call(['/usr/bin/canberra-gtk-play', '-f', soundfile])
 
         if self.xid:
-            win = GdkX11.X11Window.foreign_new_for_display(disp, self.xid)
-            (x, y, w, h) = win.get_geometry()
+            if prefs.capture_borders_pic:
+                app_win = GdkX11.X11Window.foreign_new_for_display(disp, self.xid)
+                (rx, ry, rw, rh) = app_win.get_geometry()
+                area = app_win.get_frame_extents()
+                (fx, fy, fw, fh) = (area.x, area.y, area.width, area.height)
+                win = Gdk.get_default_root_window()
+                logger.debug("Coordinates RX {0} RY {1} RW {2} RH {3}".format(rx, ry, rw, rh))
+                logger.debug("Coordinates FX {0} FY {1} FW {2} FH {3}".format(fx, fy, fw, fh))
+                dx = fw - rw
+                dy = fh - rh
+                (x, y, w, h) = (fx, fy, fw, fh)
+                logger.debug("Coordinates delta: DX {0} DY {1}".format(dx, dy))
+            else:
+                win = GdkX11.X11Window.foreign_new_for_display(disp, self.xid)
+                (x, y, w, h) = win.get_geometry()
         else:
             win = Gdk.get_default_root_window()
             (x, y, w, h) = (self.video_source['x'],
@@ -79,21 +98,43 @@ class Grabber(GObject.GObject):
                             self.video_source['width'],
                             self.video_source['height'])
 
+        logger.debug("Coordinates X {0} Y {1} W {2} H {3}".format(x, y, w, h))
         self.pixbuf = Gdk.pixbuf_get_from_window(win, x, y, w, h)
 
         if prefs.capture_cursor_pic:
+            logger.debug("Adding cursor.")
+
             cursor = Gdk.Cursor.new_for_display(Gdk.Display.get_default(), Gdk.CursorType.LEFT_PTR)
             c_picbuf = Gdk.Cursor.get_image(cursor)
-            pointer = win.get_device_position(pntr_device)
-            c_picbuf.composite(self.pixbuf, x, y, w, h,
-                                            pointer[1],
-                                            pointer[2],
-                                            1.0,
-                                            1.0,
-                                            GdkPixbuf.InterpType.BILINEAR,
-                                            255)
+
+            if self.xid and prefs.capture_borders_pic:
+                pointer = app_win.get_device_position(pntr_device)
+                (px, py) = (pointer[1], pointer[2])
+                c_picbuf.composite(self.pixbuf, rx, ry, rw, rh,
+                                   px + dx - 6,
+                                   py + dy - 2,
+                                   1.0,
+                                   1.0,
+                                   GdkPixbuf.InterpType.BILINEAR,
+                                   255)
+            else:
+                pointer = win.get_device_position(pntr_device)
+                (px, py) = (pointer[1], pointer[2])
+                #
+                # Cursor is offseted by 6 pixels to the right and 2 down
+                #
+                c_picbuf.composite(self.pixbuf, x, y, w, h,
+                                   px - 6,
+                                   py - 2,
+                                   1.0,
+                                   1.0,
+                                   GdkPixbuf.InterpType.BILINEAR,
+                                   255)
+
+            logger.debug("Cursor coords: {0} {1}".format(px, py))
 
         if self.area is not None:
+            logger.debug("Cropping image.")
             self.area_buf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, self.area[4], self.area[5])
             self.pixbuf.copy_area(self.area[0], self.area[1], self.area[4], self.area[5], self.area_buf, 0, 0)
             self.pixbuf = None
