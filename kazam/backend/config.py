@@ -109,9 +109,9 @@ class KazamConfig(ConfigParser):
                     if d_key == key:
                         return d_section["keys"][key]
 
-    def get(self, section, key):
+    def get(self, section, key, **kwargs):
         try:
-            ret = ConfigParser.get(self, section, key)
+            ret = ConfigParser.get(self, section, key, **kwargs)
             if ret == "None":
                 default = self.find_default(section, key)
                 self.set(section, key, default)
